@@ -21,7 +21,7 @@ import Model.Account;
 
 /**
  *
- * @author kali
+ * @author gino
  */
 public class Login extends javax.swing.JFrame {
 

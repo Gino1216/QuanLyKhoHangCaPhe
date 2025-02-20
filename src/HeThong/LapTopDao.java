@@ -13,7 +13,7 @@ import javax.swing.JOptionPane;
 
 /**
  *
- * @author hjepr
+ * @author gino
  */
 public class LapTopDao implements DAOInterface<Laptop> {
 

@@ -20,7 +20,7 @@ import Model.PC;
 
 /**
  *
- * @author Robot
+ * @author gino
  */
 public class ProductForm extends javax.swing.JInternalFrame {
 

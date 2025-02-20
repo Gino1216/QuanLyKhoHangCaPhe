@@ -12,7 +12,7 @@ import java.util.ArrayList;
 
 /**
  *
- * @author hjepr
+ * @author gino
  */
 public class AccountDao implements DAOInterface<Account> {
  public static AccountDao getInstance() {

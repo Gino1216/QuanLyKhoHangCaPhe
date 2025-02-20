@@ -9,7 +9,7 @@ import java.security.SecureRandom;
 
 /**
  *
- * @author hjepr
+ * @author gino
  */
 public class Bryct {
     

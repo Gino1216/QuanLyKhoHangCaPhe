@@ -8,7 +8,7 @@ import java.util.Objects;
 
 /**
  *
- * @author hjepr
+ * @author gino
  */
 public class Laptop extends PC{
     private double kichThuocMan;

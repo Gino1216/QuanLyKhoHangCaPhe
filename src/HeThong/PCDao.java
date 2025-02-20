@@ -15,7 +15,7 @@ import java.util.logging.Logger;
 
 /**
  *
- * @author hjepr
+ * @author gino
  */
 public class PCDao implements DAOInterface<PC> {
      public static PCDao getInstance() {

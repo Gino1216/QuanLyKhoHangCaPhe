@@ -8,7 +8,7 @@ import java.util.Objects;
 
 /**
  *
- * @author hjepr
+ * @author gino
  */
 public class PC {
     
