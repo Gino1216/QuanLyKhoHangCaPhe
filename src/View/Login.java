@@ -316,7 +316,6 @@ public class Login extends javax.swing.JFrame {
                     if (Bryct.checkpw(passwordcheck, acc.getPassword())) {
                         if (acc.getStatus() == 1) {
                             try {
-                                JOptionPane.showMessageDialog(this, "Đăng nhập thành công!");
                                 this.dispose();
                                 String role = acc.getRole();
                                 if (role.equals("Admin")) {
