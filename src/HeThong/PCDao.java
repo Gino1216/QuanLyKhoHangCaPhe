@@ -30,26 +30,38 @@ public class PCDao implements DAOInterface<PC> {
      @Override
     public int update(PC t) {
         int ketqua = 0;
+    Connection con = null;
+    PreparedStatement pst = null;
+
+    try {
+        con = MySQL.getConnection();
+        String sql = "UPDATE MayTinh SET tenMay=?, soLuong=?, gia=?, tenCpu=?, ram=?, xuatXu=?, cardManHinh=?, rom=?, trangThai=? WHERE maMay=?";
+        
+        pst = con.prepareStatement(sql);
+        pst.setString(1, t.getTenMay());
+        pst.setInt(2, t.getSoLuong());
+        pst.setDouble(3, t.getGia());
+        pst.setString(4, t.getTenCpu());
+        pst.setString(5, t.getRam());
+        pst.setString(6, t.getXuatXu());
+        pst.setString(7, t.getCardManHinh());
+        pst.setString(8, t.getRom());
+        pst.setInt(9, t.getTrangThai());
+        pst.setString(10, t.getMaMay());
+
+        ketqua = pst.executeUpdate();
+
+    } catch (SQLException ex) {
+        Logger.getLogger(PCDao.class.getName()).log(Level.SEVERE, null, ex);
+    } finally {
         try {
-            Connection con = MySQL.getConnection();
-            String sql = "UPDATE MayTinh SET tenMay = ?,soLuong=?,gia=?,tenCpu=?,ram=?,xuatXu=?,cardManHinh=?,rom=?,trangThai=? WHERE maMay=?";
-            PreparedStatement pst = con.prepareStatement(sql);
-            pst.setString(1, t.getTenMay());
-            pst.setInt(2, t.getSoLuong());
-            pst.setDouble(3, t.getGia());
-            pst.setString(4, t.getTenCpu());
-            pst.setString(5, t.getRam());
-            pst.setString(6, t.getXuatXu());
-            pst.setString(7, t.getCardManHinh());
-            pst.setString(8, t.getRom());
-            pst.setInt(9, t.getTrangThai());
-            pst.setString(10, t.getMaMay());
-            ketqua = pst.executeUpdate(sql);
-            MySQL.closeConnection(con);
+            if (pst != null) pst.close();
+            if (con != null) MySQL.closeConnection(con);
         } catch (SQLException ex) {
-            Logger.getLogger(PCDao.class.getName()).log(Level.SEVERE, null, ex);
+            ex.printStackTrace();
         }
-        return ketqua;
+    }
+    return ketqua;
     }
 
     @Override
@@ -69,6 +81,7 @@ public class PCDao implements DAOInterface<PC> {
         }
         return ketQua;
     }
+    
 
     @Override
     public ArrayList<PC> selectAll() {

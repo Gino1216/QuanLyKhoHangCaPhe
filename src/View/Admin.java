@@ -15,6 +15,8 @@ import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import Model.Account;
 
+
+
 /**
  *
  * @author gino
@@ -32,10 +34,13 @@ public class Admin extends javax.swing.JFrame {
     }
 
     private Admin() {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
-    }
+    throw new UnsupportedOperationException("Not supported yet.");
+}
 
-    public Admin(Account t) throws UnsupportedLookAndFeelException {
+
+
+    public Admin(Account t) {
+    try {
         ImageIcon logo = new ImageIcon(getClass().getResource("/icon/logo.png"));
         setIconImage(logo.getImage());
         UIManager.setLookAndFeel(new FlatLightLaf());
@@ -46,7 +51,6 @@ public class Admin extends javax.swing.JFrame {
         this.currentAcc = t;
         ProductForm pf = new ProductForm();
         MainContent.add(pf).setVisible(true);
-//        pf.checkRole(currentAcc);
         DefaultColor = new Color(89, 168, 105);
         ClickedColor = new Color(26, 188, 156);
         NavbarMenu.setBackground(DefaultColor);
@@ -59,7 +63,11 @@ public class Admin extends javax.swing.JFrame {
         TonKho.setBackground(DefaultColor);
         TaiKhoan1.setBackground(DefaultColor);
         ThongKe.setBackground(DefaultColor);
+    } catch (UnsupportedLookAndFeelException e) {
+        e.printStackTrace(); // In lỗi ra console
     }
+}
+
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -752,7 +760,7 @@ public class Admin extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_formWindowClosing
 
-    /**
+    /**S
      * @param args the command line arguments
      */
     public static void main(String args[]) throws UnsupportedLookAndFeelException {

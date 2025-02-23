@@ -7,6 +7,7 @@ package View;
 //import controller.SearchProduct;
 import HeThong.LapTopDao;
 import HeThong.PCDao;
+import JDialog.ProductDialog;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import javax.swing.JOptionPane;
@@ -17,6 +18,8 @@ import javax.swing.table.DefaultTableModel;
 import Model.Account;
 import Model.Laptop;
 import Model.PC;
+import javax.swing.*;
+
 
 /**
  *
@@ -75,7 +78,7 @@ public class ProductForm extends javax.swing.JInternalFrame {
                         loaimay = "PC/Case";
                     }
                     tblModel.addRow(new Object[]{
-                        i.getMaMay(), i.getTenMay(), i.getSoLuong(), formatter.format(i.getGia()) + "đ", i.getTenCpu(), i.getRam(), i.getRom(), loaimay
+                        i.getMaMay(), i.getTenMay(), i.getSoLuong(), formatter.format(i.getGia()) , i.getTenCpu(), i.getRam(), i.getRom(), loaimay
                     });
                 }
             }
@@ -273,10 +276,8 @@ public class ProductForm extends javax.swing.JInternalFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void btnAddActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnAddActionPerformed
-
-//        AddProduct a = new AddProduct(this, (JFrame) javax.swing.SwingUtilities.getWindowAncestor(this), rootPaneCheckingEnabled);
-//        a.setVisible(true);
-
+JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
+new ProductDialog(parentFrame, (DefaultTableModel) tblSanPham.getModel());
     }//GEN-LAST:event_btnAddActionPerformed
 
     private void btnDeleteActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnDeleteActionPerformed
@@ -290,14 +291,19 @@ public class ProductForm extends javax.swing.JInternalFrame {
 
     private void btnEditActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnEditActionPerformed
         // TODO add your handling code here:
-        if (tblSanPham.getSelectedRow() == -1) {
-            JOptionPane.showMessageDialog(this, "Vui lòng chọn sản phẩm cần sửa");
-        } else {
-            //       UpdateProduct a = new UpdateProduct(this, (JFrame) javax.swing.SwingUtilities.getWindowAncestor(this), rootPaneCheckingEnabled);
-            //       a.setVisible(true);
+         int row = tblSanPham.getSelectedRow();
+    if (row != -1) {  // Kiểm tra xem có dòng nào được chọn chưa
+        Object[] productData = new Object[8];
+        for (int i = 0; i < 8; i++) {
+            productData[i] = tblModel.getValueAt(row, i);
         }
+        new ProductDialog((JFrame) SwingUtilities.getWindowAncestor(this), tblModel, productData);
+    } else {
+        JOptionPane.showMessageDialog(this, "Vui lòng chọn sản phẩm cần sửa!", "Thông báo", JOptionPane.WARNING_MESSAGE);
+    }
     }//GEN-LAST:event_btnEditActionPerformed
 
+    
     private void jButton6ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton6ActionPerformed
 
     }//GEN-LAST:event_jButton6ActionPerformed

@@ -16,8 +16,8 @@ import java.util.logging.Logger;
 import javax.swing.ImageIcon;
 import javax.swing.JOptionPane;
 import javax.swing.UIManager;
-import javax.swing.UnsupportedLookAndFeelException;
 import Model.Account;
+import javax.swing.UnsupportedLookAndFeelException;
 
 /**
  *
@@ -302,7 +302,7 @@ public class Login extends javax.swing.JFrame {
         });
     }
 
-    public void checkLogin() {
+     public void checkLogin() {
         String usercheck = loginUser.getText();
         String passwordcheck = passwordUser.getText();
         if (usercheck.equals("") || passwordcheck.equals("")) {
@@ -337,9 +337,8 @@ public class Login extends javax.swing.JFrame {
 //                                    ql.setVisible(true);
 //                                    ql.setName(acc.getFullName());
                                 }
-                            } catch (UnsupportedLookAndFeelException ex) {
-                                Logger.getLogger(Login.class.getName()).log(Level.SEVERE, null, ex);
-                            }
+                                 } catch (Exception e) {
+            }
                         } else {
                             JOptionPane.showMessageDialog(this, "Tài khoản của bạn đã bị khóa !", "Cảnh báo !", JOptionPane.WARNING_MESSAGE);
                         }
@@ -350,6 +349,7 @@ public class Login extends javax.swing.JFrame {
             } catch (Exception e) {
             }
         }
+    
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
