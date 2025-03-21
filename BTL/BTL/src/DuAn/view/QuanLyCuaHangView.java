@@ -63,7 +63,6 @@ public class QuanLyCuaHangView extends JFrame {
     // Gán controller
     public void setController(MayTinhController controller) {
         this.controller = controller;
-        System.out.println("Controller đã được gán: " + (controller != null));
     }
 
     public void setNhaCungCap(NhaCungCapController nhaCungCapController){

@@ -20,23 +20,41 @@ public class NguoiDungDAO {
     }
 
     // Kiểm tra đăng nhập
-    public NguoiDung kiemTraDangNhap(String username, String password) {
-        String query = "SELECT * FROM account WHERE userName = ? AND password = ?";
-        try (PreparedStatement stmt = connection.prepareStatement(query)) {
+    public NguoiDung kiemTraDangNhap(String username) {
+        String sql = "SELECT * FROM Account WHERE username = ?";
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setString(1, username);
-            stmt.setString(2, password); // Trong thực tế, nên so sánh mật khẩu đã mã hóa
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
-                return new NguoiDung(
-                        rs.getString("fullName"),
-                        rs.getString("userName"),
-                        rs.getString("password"),
-                        rs.getString("role")
-                );
+                NguoiDung nguoiDung = new NguoiDung();
+                nguoiDung.setUserName(rs.getString("username"));
+                nguoiDung.setPassword(rs.getString("password")); // Mật khẩu đã băm
+                return nguoiDung;
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
         return null;
     }
+
+    //kiem tra dang nhap neu k dung Bryct
+//    public NguoiDung kiemTraDangNhap(String username, String password) {
+//        String query = "SELECT * FROM account WHERE userName = ? AND password = ?";
+//        try (PreparedStatement stmt = connection.prepareStatement(query)) {
+//            stmt.setString(1, username);
+//            stmt.setString(2, password);
+//            ResultSet rs = stmt.executeQuery();
+//            if (rs.next()) {
+//                return new NguoiDung(
+//                        rs.getString("fullName"),
+//                        rs.getString("userName"),
+//                        rs.getString("password"),
+//                        rs.getString("role")
+//                );
+//            }
+//        } catch (SQLException e) {
+//            e.printStackTrace();
+//        }
+//        return null;
+//    }
 }
