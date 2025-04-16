@@ -1,8 +1,8 @@
 package View;
 
 import Gui.MainFunction;
+import View.Dialog.ChiTietCaLam;
 import com.formdev.flatlaf.FlatLightLaf;
-
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -44,6 +44,9 @@ public class CaLam extends JPanel {
 
         // Set background color for the panel
         setBackground(backgroundColor);
+
+        // Load initial data
+        loadData();
     }
 
     // Method to create top panel (includes function bar and search/filter panel)
@@ -63,8 +66,60 @@ public class CaLam extends JPanel {
         // Button actions for toolbar
         functionBar.setButtonActionListener("create", this::showAddShiftDialog);
         functionBar.setButtonActionListener("update", this::showEditShiftDialog);
+        functionBar.setButtonActionListener("detail", this::showShiftDetailDialog);
+        functionBar.setButtonActionListener("delete", this::deleteShift);
+        functionBar.setButtonActionListener("import", this::importShifts);
+        functionBar.setButtonActionListener("export", this::exportShifts);
 
         return topPanel;
+    }
+
+    private void showShiftDetailDialog() {
+        int selectedRow = table.getSelectedRow();
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn một ca làm việc để xem chi tiết!", "Cảnh báo", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        int modelRow = table.convertRowIndexToModel(selectedRow);
+        String shiftId = table.getValueAt(modelRow, 0).toString();
+        String shiftName = table.getValueAt(modelRow, 1).toString();
+        String startTime = table.getValueAt(modelRow, 2).toString();
+        String endTime = table.getValueAt(modelRow, 3).toString();
+        String workDate = table.getValueAt(modelRow, 4).toString();
+        String status = table.getValueAt(modelRow, 5).toString();
+
+        // Mở ShiftDetailView
+        ChiTietCaLam detailView = new ChiTietCaLam(shiftId, shiftName, startTime, endTime, workDate, status);
+        detailView.setVisible(true);
+    }
+
+    private void deleteShift() {
+        int selectedRow = table.getSelectedRow();
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn một ca làm việc để xóa!", "Cảnh báo", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        int confirm = JOptionPane.showConfirmDialog(this, "Bạn có chắc chắn muốn xóa ca làm việc này?", "Xác nhận xóa", JOptionPane.YES_NO_OPTION);
+        if (confirm == JOptionPane.YES_OPTION) {
+            int modelRow = table.convertRowIndexToModel(selectedRow);
+            DefaultTableModel model = (DefaultTableModel) table.getModel();
+            model.removeRow(modelRow);
+
+            // Cập nhật lại Mã ca
+            for (int i = 0; i < table.getRowCount(); i++) {
+                table.setValueAt(i + 1, i, 0);
+            }
+        }
+    }
+
+    private void importShifts() {
+        JOptionPane.showMessageDialog(this, "Chức năng nhập ca làm việc chưa được triển khai!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private void exportShifts() {
+        JOptionPane.showMessageDialog(this, "Chức năng xuất ca làm việc chưa được triển khai!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
     }
 
     private void showAddShiftDialog() {

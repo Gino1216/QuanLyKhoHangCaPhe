@@ -50,7 +50,7 @@ public class TaiKhoan extends JPanel {
         topPanel.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
 
         // Initialize main function toolbar
-        functionBar = new MainFunction("taikhoan", new String[]{"create", "update", "delete", "detail", "import", "export"});
+        functionBar = new MainFunction("taikhoan", new String[]{"create", "update", "delete", "import", "export"});
         topPanel.add(functionBar, BorderLayout.WEST);
 
         // Create and add search/filter panel to the top panel

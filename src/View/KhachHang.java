@@ -1,49 +1,17 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package View;
 
 import Gui.InputDate;
 import Gui.MainFunction;
+import View.Dialog.ChiTietKhachHang;
 import com.formdev.flatlaf.FlatLightLaf;
-import com.formdev.flatlaf.json.ParseException;
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.FlowLayout;
-import java.awt.Font;
-import java.awt.Frame;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
-import java.text.SimpleDateFormat;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javax.swing.BorderFactory;
-import javax.swing.ImageIcon;
-import javax.swing.JButton;
-import javax.swing.JComboBox;
-import javax.swing.JDialog;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTable;
-import javax.swing.JTextField;
-import javax.swing.RowFilter;
-import javax.swing.SwingUtilities;
+import java.awt.*;
+import java.awt.event.*;
+import java.text.*;
+import javax.swing.*;
 import javax.swing.border.EmptyBorder;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
-import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableModel;
-import javax.swing.table.TableRowSorter;
+import javax.swing.event.*;
+import javax.swing.table.*;
 
-/**
- *
- * @author hjepr
- */
 public class KhachHang extends JPanel {
 
     private MainFunction functionBar;
@@ -52,48 +20,43 @@ public class KhachHang extends JPanel {
     private JComboBox<String> cbbFilter;
     private JTextField txtSearch;
     private JButton btnRefresh;
+    private DefaultTableModel tableModel;
     private Color backgroundColor = new Color(240, 247, 250);
 
     public KhachHang() {
-        // Set up FlatLaf theme
         FlatLightLaf.setup();
-
-        // Configure JPanel (you don't need setSize, setLocation, etc. for JPanel)
         setLayout(new BorderLayout(0, 8));
+        setBackground(backgroundColor);
 
-        // Create top panel to hold both toolbar and search panel
         JPanel topPanel = new JPanel(new BorderLayout());
         topPanel.setBackground(backgroundColor);
         topPanel.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
 
-        // Initialize main function toolbar
-        functionBar = new MainFunction("ncc", new String[]{"create", "update", "delete", "detail", "import", "export"});
+        functionBar = new MainFunction("khachhang", new String[]{"create", "update", "delete", "detail", "import", "export"});
         topPanel.add(functionBar, BorderLayout.WEST);
 
-        // Create search/filter panel
         JPanel searchPanel = createSearchPanel();
         topPanel.add(searchPanel, BorderLayout.EAST);
 
-        // Add top panel to JPanel
         add(topPanel, BorderLayout.NORTH);
 
-        // Initialize table
         scroll = createTable();
-        add(scroll, BorderLayout.CENTER); // Table takes remaining space
+        add(scroll, BorderLayout.CENTER);
 
-        // Set background
-        setBackground(backgroundColor);
-        functionBar.setButtonActionListener("create", this::showAddSupplierDialog);
-        functionBar.setButtonActionListener("update", this::showEditSupplierDialog);
+        functionBar.setButtonActionListener("create", this::showAddCustomerDialog);
+        functionBar.setButtonActionListener("update", this::showEditCustomerDialog);
+        functionBar.setButtonActionListener("delete", this::deleteCustomer);
+        functionBar.setButtonActionListener("detail", this::showCustomerDetails);
+        functionBar.setButtonActionListener("import", () -> JOptionPane.showMessageDialog(this, "Chức năng nhập chưa được triển khai!", "Thông báo", JOptionPane.INFORMATION_MESSAGE));
+        functionBar.setButtonActionListener("export", () -> JOptionPane.showMessageDialog(this, "Chức năng xuất chưa được triển khai!", "Thông báo", JOptionPane.INFORMATION_MESSAGE));
     }
 
-    private void showAddSupplierDialog() {
+    private void showAddCustomerDialog() {
         JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Thêm Khách Hàng", true);
-        dialog.setSize(900, 700); // Tăng kích thước dialog để chứa thêm các trường
+        dialog.setSize(900, 700);
         dialog.setLocationRelativeTo(this);
         dialog.setLayout(new BorderLayout());
 
-        // Header
         JLabel header = new JLabel("THÊM KHÁCH HÀNG", JLabel.CENTER);
         header.setFont(new Font("Segoe UI", Font.BOLD, 20));
         header.setForeground(Color.WHITE);
@@ -102,15 +65,13 @@ public class KhachHang extends JPanel {
         header.setBorder(new EmptyBorder(15, 0, 15, 0));
         dialog.add(header, BorderLayout.NORTH);
 
-        // Form panel
         JPanel formPanel = new JPanel(new GridBagLayout());
         formPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
-        formPanel.setBackground(new Color(255, 255, 255, 255));
+        formPanel.setBackground(Color.WHITE);
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(10, 10, 10, 10);
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        // Labels and fields
         String[] labels = {"Tên khách hàng", "Số điện thoại", "Địa chỉ", "Ngày tham gia", "Email"};
         JTextField[] textFields = new JTextField[labels.length];
 
@@ -119,7 +80,6 @@ public class KhachHang extends JPanel {
             gbc.gridwidth = 1;
             gbc.anchor = GridBagConstraints.WEST;
 
-            // Nhãn
             JLabel label = new JLabel(labels[i]);
             label.setForeground(Color.BLACK);
             label.setFont(new Font("Segoe UI", Font.PLAIN, 16));
@@ -127,7 +87,6 @@ public class KhachHang extends JPanel {
             gbc.gridy = row;
             formPanel.add(label, gbc);
 
-            // Trường nhập liệu
             textFields[i] = new JTextField(15);
             textFields[i].setFont(new Font("Segoe UI", Font.PLAIN, 16));
             textFields[i].setPreferredSize(new Dimension(200, 40));
@@ -135,9 +94,9 @@ public class KhachHang extends JPanel {
             if (labels[i].equals("Số điện thoại")) {
                 textFields[i].setText("Nhập số điện thoại (10 chữ số)");
                 textFields[i].setForeground(Color.GRAY);
-                textFields[i].addFocusListener(new java.awt.event.FocusAdapter() {
+                textFields[i].addFocusListener(new FocusAdapter() {
                     @Override
-                    public void focusGained(java.awt.event.FocusEvent evt) {
+                    public void focusGained(FocusEvent evt) {
                         JTextField textField = (JTextField) evt.getSource();
                         if (textField.getText().equals("Nhập số điện thoại (10 chữ số)")) {
                             textField.setText("");
@@ -146,7 +105,7 @@ public class KhachHang extends JPanel {
                     }
 
                     @Override
-                    public void focusLost(java.awt.event.FocusEvent evt) {
+                    public void focusLost(FocusEvent evt) {
                         JTextField textField = (JTextField) evt.getSource();
                         if (textField.getText().isEmpty()) {
                             textField.setText("Nhập số điện thoại (10 chữ số)");
@@ -157,9 +116,9 @@ public class KhachHang extends JPanel {
             } else if (labels[i].equals("Email")) {
                 textFields[i].setText("Nhập email (tùy chọn)");
                 textFields[i].setForeground(Color.GRAY);
-                textFields[i].addFocusListener(new java.awt.event.FocusAdapter() {
+                textFields[i].addFocusListener(new FocusAdapter() {
                     @Override
-                    public void focusGained(java.awt.event.FocusEvent evt) {
+                    public void focusGained(FocusEvent evt) {
                         JTextField textField = (JTextField) evt.getSource();
                         if (textField.getText().equals("Nhập email (tùy chọn)")) {
                             textField.setText("");
@@ -168,7 +127,7 @@ public class KhachHang extends JPanel {
                     }
 
                     @Override
-                    public void focusLost(java.awt.event.FocusEvent evt) {
+                    public void focusLost(FocusEvent evt) {
                         JTextField textField = (JTextField) evt.getSource();
                         if (textField.getText().isEmpty()) {
                             textField.setText("Nhập email (tùy chọn)");
@@ -179,9 +138,9 @@ public class KhachHang extends JPanel {
             } else if (labels[i].equals("Ngày tham gia")) {
                 textFields[i].setText("dd/MM/yyyy");
                 textFields[i].setForeground(Color.GRAY);
-                textFields[i].addFocusListener(new java.awt.event.FocusAdapter() {
+                textFields[i].addFocusListener(new FocusAdapter() {
                     @Override
-                    public void focusGained(java.awt.event.FocusEvent evt) {
+                    public void focusGained(FocusEvent evt) {
                         JTextField textField = (JTextField) evt.getSource();
                         if (textField.getText().equals("dd/MM/yyyy")) {
                             textField.setText("");
@@ -190,7 +149,7 @@ public class KhachHang extends JPanel {
                     }
 
                     @Override
-                    public void focusLost(java.awt.event.FocusEvent evt) {
+                    public void focusLost(FocusEvent evt) {
                         JTextField textField = (JTextField) evt.getSource();
                         if (textField.getText().isEmpty()) {
                             textField.setText("dd/MM/yyyy");
@@ -210,22 +169,21 @@ public class KhachHang extends JPanel {
 
         dialog.add(formPanel, BorderLayout.CENTER);
 
-        // Buttons panel
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 15));
         buttonPanel.setBackground(new Color(173, 216, 230));
         JButton btnAdd = new JButton("Thêm khách hàng");
         btnAdd.setBackground(new Color(59, 130, 246));
         btnAdd.setForeground(Color.WHITE);
-        btnAdd.setFont(new Font("Segoe UI", Font.BOLD, 16));
-        btnAdd.setPreferredSize(new Dimension(180, 50));
-        btnAdd.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+        btnAdd.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        btnAdd.setPreferredSize(new Dimension(150, 40));
+        btnAdd.setBorder(BorderFactory.createEmptyBorder(8, 15, 8, 15));
 
         JButton btnCancel = new JButton("Hủy bỏ");
         btnCancel.setBackground(new Color(239, 68, 68));
         btnCancel.setForeground(Color.WHITE);
-        btnCancel.setFont(new Font("Segoe UI", Font.BOLD, 16));
-        btnCancel.setPreferredSize(new Dimension(180, 50));
-        btnCancel.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+        btnCancel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        btnCancel.setPreferredSize(new Dimension(150, 40));
+        btnCancel.setBorder(BorderFactory.createEmptyBorder(8, 15, 8, 15));
 
         btnAdd.addActionListener(e -> {
             String name = textFields[0].getText();
@@ -234,7 +192,6 @@ public class KhachHang extends JPanel {
             String joinDate = textFields[3].getText();
             String email = textFields[4].getText();
 
-            // Kiểm tra định dạng ngày tham gia
             SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
             dateFormat.setLenient(false);
             try {
@@ -246,11 +203,8 @@ public class KhachHang extends JPanel {
             } catch (ParseException ex) {
                 JOptionPane.showMessageDialog(dialog, "Ngày tham gia phải có định dạng dd/MM/yyyy!", "Lỗi", JOptionPane.ERROR_MESSAGE);
                 return;
-            } catch (java.text.ParseException ex) {
-                Logger.getLogger(KhachHang.class.getName()).log(Level.SEVERE, null, ex);
             }
 
-            // Kiểm tra định dạng số điện thoại
             if (!phone.equals("Nhập số điện thoại (10 chữ số)")) {
                 if (!phone.matches("\\d{10}")) {
                     JOptionPane.showMessageDialog(dialog, "Số điện thoại phải có 10 chữ số!", "Lỗi", JOptionPane.ERROR_MESSAGE);
@@ -260,7 +214,6 @@ public class KhachHang extends JPanel {
                 phone = "";
             }
 
-            // Kiểm tra định dạng email (nếu có)
             if (!email.equals("Nhập email (tùy chọn)")) {
                 if (!email.matches("^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$")) {
                     JOptionPane.showMessageDialog(dialog, "Email không hợp lệ!", "Lỗi", JOptionPane.ERROR_MESSAGE);
@@ -270,16 +223,14 @@ public class KhachHang extends JPanel {
                 email = "";
             }
 
-            // Kiểm tra các trường bắt buộc
             if (name.isEmpty() || phone.isEmpty() || address.isEmpty() || joinDate.isEmpty()) {
                 JOptionPane.showMessageDialog(dialog, "Vui lòng điền đầy đủ các trường bắt buộc!", "Lỗi", JOptionPane.ERROR_MESSAGE);
                 return;
             }
 
-            // Thêm vào bảng
-            DefaultTableModel model = (DefaultTableModel) table.getModel();
             int newId = table.getRowCount() + 1;
-            model.addRow(new Object[]{newId, name, address, joinDate, email, phone});
+            tableModel.addRow(new Object[]{newId, name, address, joinDate, email, phone});
+            JOptionPane.showMessageDialog(dialog, "Thêm khách hàng thành công!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
             dialog.dispose();
         });
 
@@ -292,7 +243,7 @@ public class KhachHang extends JPanel {
         dialog.setVisible(true);
     }
 
-    private void showEditSupplierDialog() {
+    private void showEditCustomerDialog() {
         int selectedRow = table.getSelectedRow();
         if (selectedRow == -1) {
             JOptionPane.showMessageDialog(this, "Vui lòng chọn một khách hàng để chỉnh sửa!", "Cảnh báo", JOptionPane.WARNING_MESSAGE);
@@ -308,11 +259,10 @@ public class KhachHang extends JPanel {
         String phone = table.getValueAt(modelRow, 5).toString();
 
         JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Chỉnh Sửa Khách Hàng", true);
-        dialog.setSize(900, 700); // Tăng kích thước dialog để chứa thêm các trường
+        dialog.setSize(900, 700);
         dialog.setLocationRelativeTo(this);
         dialog.setLayout(new BorderLayout());
 
-        // Header
         JLabel header = new JLabel("CHỈNH SỬA KHÁCH HÀNG", JLabel.CENTER);
         header.setFont(new Font("Segoe UI", Font.BOLD, 20));
         header.setForeground(Color.WHITE);
@@ -321,15 +271,13 @@ public class KhachHang extends JPanel {
         header.setBorder(new EmptyBorder(15, 0, 15, 0));
         dialog.add(header, BorderLayout.NORTH);
 
-        // Form panel
         JPanel formPanel = new JPanel(new GridBagLayout());
         formPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
-        formPanel.setBackground(new Color(255, 255, 255, 255));
+        formPanel.setBackground(Color.WHITE);
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(10, 10, 10, 10);
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        // Labels and fields
         String[] labels = {"Mã khách hàng", "Tên khách hàng", "Số điện thoại", "Địa chỉ", "Ngày tham gia", "Email"};
         JTextField[] textFields = new JTextField[labels.length];
 
@@ -338,7 +286,6 @@ public class KhachHang extends JPanel {
             gbc.gridwidth = 1;
             gbc.anchor = GridBagConstraints.WEST;
 
-            // Nhãn
             JLabel label = new JLabel(labels[i]);
             label.setForeground(Color.BLACK);
             label.setFont(new Font("Segoe UI", Font.PLAIN, 16));
@@ -346,20 +293,19 @@ public class KhachHang extends JPanel {
             gbc.gridy = row;
             formPanel.add(label, gbc);
 
-            // Trường nhập liệu
             textFields[i] = new JTextField(15);
             textFields[i].setFont(new Font("Segoe UI", Font.PLAIN, 16));
             textFields[i].setPreferredSize(new Dimension(200, 40));
 
             if (labels[i].equals("Mã khách hàng")) {
                 textFields[i].setText(id);
-                textFields[i].setEditable(false); // Không cho chỉnh sửa mã khách hàng
+                textFields[i].setEditable(false);
             } else if (labels[i].equals("Số điện thoại")) {
-                textFields[i].setText(phone);
-                textFields[i].setForeground(Color.BLACK);
-                textFields[i].addFocusListener(new java.awt.event.FocusAdapter() {
+                textFields[i].setText(phone.isEmpty() ? "Nhập số điện thoại (10 chữ số)" : phone);
+                textFields[i].setForeground(phone.isEmpty() ? Color.GRAY : Color.BLACK);
+                textFields[i].addFocusListener(new FocusAdapter() {
                     @Override
-                    public void focusGained(java.awt.event.FocusEvent evt) {
+                    public void focusGained(FocusEvent evt) {
                         JTextField textField = (JTextField) evt.getSource();
                         if (textField.getText().equals("Nhập số điện thoại (10 chữ số)")) {
                             textField.setText("");
@@ -368,7 +314,7 @@ public class KhachHang extends JPanel {
                     }
 
                     @Override
-                    public void focusLost(java.awt.event.FocusEvent evt) {
+                    public void focusLost(FocusEvent evt) {
                         JTextField textField = (JTextField) evt.getSource();
                         if (textField.getText().isEmpty()) {
                             textField.setText("Nhập số điện thoại (10 chữ số)");
@@ -379,9 +325,9 @@ public class KhachHang extends JPanel {
             } else if (labels[i].equals("Email")) {
                 textFields[i].setText(email.isEmpty() ? "Nhập email (tùy chọn)" : email);
                 textFields[i].setForeground(email.isEmpty() ? Color.GRAY : Color.BLACK);
-                textFields[i].addFocusListener(new java.awt.event.FocusAdapter() {
+                textFields[i].addFocusListener(new FocusAdapter() {
                     @Override
-                    public void focusGained(java.awt.event.FocusEvent evt) {
+                    public void focusGained(FocusEvent evt) {
                         JTextField textField = (JTextField) evt.getSource();
                         if (textField.getText().equals("Nhập email (tùy chọn)")) {
                             textField.setText("");
@@ -390,7 +336,7 @@ public class KhachHang extends JPanel {
                     }
 
                     @Override
-                    public void focusLost(java.awt.event.FocusEvent evt) {
+                    public void focusLost(FocusEvent evt) {
                         JTextField textField = (JTextField) evt.getSource();
                         if (textField.getText().isEmpty()) {
                             textField.setText("Nhập email (tùy chọn)");
@@ -399,11 +345,11 @@ public class KhachHang extends JPanel {
                     }
                 });
             } else if (labels[i].equals("Ngày tham gia")) {
-                textFields[i].setText(joinDate);
-                textFields[i].setForeground(Color.BLACK);
-                textFields[i].addFocusListener(new java.awt.event.FocusAdapter() {
+                textFields[i].setText(joinDate.isEmpty() ? "dd/MM/yyyy" : joinDate);
+                textFields[i].setForeground(joinDate.isEmpty() ? Color.GRAY : Color.BLACK);
+                textFields[i].addFocusListener(new FocusAdapter() {
                     @Override
-                    public void focusGained(java.awt.event.FocusEvent evt) {
+                    public void focusGained(FocusEvent evt) {
                         JTextField textField = (JTextField) evt.getSource();
                         if (textField.getText().equals("dd/MM/yyyy")) {
                             textField.setText("");
@@ -412,7 +358,7 @@ public class KhachHang extends JPanel {
                     }
 
                     @Override
-                    public void focusLost(java.awt.event.FocusEvent evt) {
+                    public void focusLost(FocusEvent evt) {
                         JTextField textField = (JTextField) evt.getSource();
                         if (textField.getText().isEmpty()) {
                             textField.setText("dd/MM/yyyy");
@@ -421,14 +367,11 @@ public class KhachHang extends JPanel {
                     }
                 });
             } else {
-                // Điền dữ liệu từ bảng
                 switch (i) {
-                    case 1:
+                    case 1 ->
                         textFields[i].setText(name);
-                        break;
-                    case 3:
+                    case 3 ->
                         textFields[i].setText(address);
-                        break;
                 }
             }
             gbc.gridx = i % 2 == 0 ? 1 : 3;
@@ -442,22 +385,21 @@ public class KhachHang extends JPanel {
 
         dialog.add(formPanel, BorderLayout.CENTER);
 
-        // Buttons panel
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 15));
         buttonPanel.setBackground(new Color(173, 216, 230));
         JButton btnSave = new JButton("Lưu thông tin");
         btnSave.setBackground(new Color(59, 130, 246));
         btnSave.setForeground(Color.WHITE);
-        btnSave.setFont(new Font("Segoe UI", Font.BOLD, 16));
-        btnSave.setPreferredSize(new Dimension(180, 50));
-        btnSave.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+        btnSave.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        btnSave.setPreferredSize(new Dimension(150, 40));
+        btnSave.setBorder(BorderFactory.createEmptyBorder(8, 15, 8, 15));
 
         JButton btnCancel = new JButton("Hủy bỏ");
         btnCancel.setBackground(new Color(239, 68, 68));
         btnCancel.setForeground(Color.WHITE);
-        btnCancel.setFont(new Font("Segoe UI", Font.BOLD, 16));
-        btnCancel.setPreferredSize(new Dimension(180, 50));
-        btnCancel.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+        btnCancel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        btnCancel.setPreferredSize(new Dimension(150, 40));
+        btnCancel.setBorder(BorderFactory.createEmptyBorder(8, 15, 8, 15));
 
         btnSave.addActionListener(e -> {
             String newName = textFields[1].getText();
@@ -466,7 +408,6 @@ public class KhachHang extends JPanel {
             String newJoinDate = textFields[4].getText();
             String newEmail = textFields[5].getText();
 
-            // Kiểm tra định dạng ngày tham gia
             SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
             dateFormat.setLenient(false);
             try {
@@ -478,11 +419,8 @@ public class KhachHang extends JPanel {
             } catch (ParseException ex) {
                 JOptionPane.showMessageDialog(dialog, "Ngày tham gia phải có định dạng dd/MM/yyyy!", "Lỗi", JOptionPane.ERROR_MESSAGE);
                 return;
-            } catch (java.text.ParseException ex) {
-                Logger.getLogger(KhachHang.class.getName()).log(Level.SEVERE, null, ex);
             }
 
-            // Kiểm tra định dạng số điện thoại
             if (!newPhone.equals("Nhập số điện thoại (10 chữ số)")) {
                 if (!newPhone.matches("\\d{10}")) {
                     JOptionPane.showMessageDialog(dialog, "Số điện thoại phải có 10 chữ số!", "Lỗi", JOptionPane.ERROR_MESSAGE);
@@ -492,7 +430,6 @@ public class KhachHang extends JPanel {
                 newPhone = "";
             }
 
-            // Kiểm tra định dạng email (nếu có)
             if (!newEmail.equals("Nhập email (tùy chọn)")) {
                 if (!newEmail.matches("^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$")) {
                     JOptionPane.showMessageDialog(dialog, "Email không hợp lệ!", "Lỗi", JOptionPane.ERROR_MESSAGE);
@@ -502,18 +439,17 @@ public class KhachHang extends JPanel {
                 newEmail = "";
             }
 
-            // Kiểm tra các trường bắt buộc
             if (newName.isEmpty() || newPhone.isEmpty() || newAddress.isEmpty() || newJoinDate.isEmpty()) {
                 JOptionPane.showMessageDialog(dialog, "Vui lòng điền đầy đủ các trường bắt buộc!", "Lỗi", JOptionPane.ERROR_MESSAGE);
                 return;
             }
 
-            // Cập nhật dữ liệu vào bảng
-            table.setValueAt(newName, modelRow, 1); // Tên khách hàng
-            table.setValueAt(newAddress, modelRow, 2); // Địa chỉ
-            table.setValueAt(newJoinDate, modelRow, 3); // Ngày tham gia
-            table.setValueAt(newEmail, modelRow, 4); // Email
-            table.setValueAt(newPhone, modelRow, 5); // Số điện thoại
+            table.setValueAt(newName, modelRow, 1);
+            table.setValueAt(newAddress, modelRow, 2);
+            table.setValueAt(newJoinDate, modelRow, 3);
+            table.setValueAt(newEmail, modelRow, 4);
+            table.setValueAt(newPhone, modelRow, 5);
+            JOptionPane.showMessageDialog(dialog, "Cập nhật khách hàng thành công!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
             dialog.dispose();
         });
 
@@ -526,11 +462,44 @@ public class KhachHang extends JPanel {
         dialog.setVisible(true);
     }
 
+    private void deleteCustomer() {
+        int selectedRow = table.getSelectedRow();
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn một khách hàng để xóa!", "Cảnh báo", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        int choice = JOptionPane.showConfirmDialog(this, "Bạn có chắc muốn xóa khách hàng này?", "Xác nhận xóa", JOptionPane.YES_NO_OPTION);
+        if (choice == JOptionPane.YES_OPTION) {
+            tableModel.removeRow(table.convertRowIndexToModel(selectedRow));
+            JOptionPane.showMessageDialog(this, "Xóa khách hàng thành công!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+        }
+    }
+
+    private void showCustomerDetails() {
+        int selectedRow = table.getSelectedRow();
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn một khách hàng để xem chi tiết!", "Cảnh báo", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        int modelRow = table.convertRowIndexToModel(selectedRow);
+        String id = table.getValueAt(modelRow, 0).toString();
+        String name = table.getValueAt(modelRow, 1).toString();
+        String address = table.getValueAt(modelRow, 2).toString();
+        String joinDate = table.getValueAt(modelRow, 3).toString();
+        String email = table.getValueAt(modelRow, 4).toString();
+        String phone = table.getValueAt(modelRow, 5).toString();
+
+        ChiTietKhachHang detailDialog = new ChiTietKhachHang(id, name, address, joinDate, email, phone);
+        detailDialog.setVisible(true);
+    }
+
     private JPanel createSearchPanel() {
         JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 0));
         searchPanel.setBackground(backgroundColor);
 
-        cbbFilter = new JComboBox<>(new String[]{"Tất cả", "Tên nhà cung cấp", "Địa chỉ", "Email"});
+        cbbFilter = new JComboBox<>(new String[]{"Tất cả", "Tên khách hàng", "Địa chỉ", "Số điện thoại", "Email"});
         cbbFilter.setPreferredSize(new Dimension(100, 25));
 
         txtSearch = new JTextField();
@@ -538,9 +507,9 @@ public class KhachHang extends JPanel {
 
         btnRefresh = new JButton("Làm mới");
         try {
-            btnRefresh.setIcon(new ImageIcon(getClass().getResource("/icon/refresh.png")));
+            btnRefresh.setIcon(new ImageIcon(getClass().getResource("/icon/refresh.svg")));
         } catch (Exception e) {
-            System.err.println("Không tìm thấy icon refresh.png trong /icon/");
+            System.err.println("Không tìm thấy icon refresh.svg trong /icon/");
         }
         btnRefresh.setPreferredSize(new Dimension(150, 35));
 
@@ -588,21 +557,19 @@ public class KhachHang extends JPanel {
             {7, "Bùi Văn G", "Biên Hòa, Đồng Nai", "01/06/2023", "buig@yahoo.com", "0989988776"}
         };
 
-        DefaultTableModel model = new DefaultTableModel(data, columns) {
+        tableModel = new DefaultTableModel(data, columns) {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
             }
         };
 
-        table = new JTable(model);
+        table = new JTable(tableModel);
         table.setRowHeight(35);
         table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 16));
         table.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         table.setGridColor(new Color(200, 200, 200));
         table.setShowGrid(true);
-
-        // Auto-resize columns
         table.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
 
         JScrollPane scrollPane = new JScrollPane(table);
@@ -623,17 +590,19 @@ public class KhachHang extends JPanel {
 
         int[] columnIndices;
         if ("Tất cả".equals(selectedFilter)) {
-            columnIndices = new int[]{0, 1, 2, 3, 4};
+            columnIndices = new int[]{1, 2, 4, 5};
         } else {
             int columnIndex = switch (selectedFilter) {
-                case "Tên Khách Hàng" ->
+                case "Tên khách hàng" ->
                     1;
                 case "Địa chỉ" ->
                     2;
-                case "Số Điện Thoại" ->
-                    3;
+                case "Số điện thoại" ->
+                    5;
+                case "Email" ->
+                    4;
                 default ->
-                    0;
+                    1;
             };
             columnIndices = new int[]{columnIndex};
         }
@@ -643,6 +612,6 @@ public class KhachHang extends JPanel {
     }
 
     private void loadData() {
-        System.out.println("Dữ liệu đã được làm mới.");
+        tableModel.fireTableDataChanged();
     }
 }

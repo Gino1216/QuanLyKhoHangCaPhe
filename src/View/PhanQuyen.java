@@ -1,9 +1,12 @@
 package View;
 
 import Gui.MainFunction;
+import View.Dialog.ChiTietPhanQuyen;
 import com.formdev.flatlaf.FlatLightLaf;
 
 import java.awt.*;
+import java.util.HashMap;
+import java.util.Map;
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -24,7 +27,14 @@ public class PhanQuyen extends JPanel {
     private Color backgroundColor = new Color(240, 247, 250);
     private Color accentColor = new Color(52, 73, 94);
 
+    // Map để lưu trữ danh sách quyền cho từng nhóm quyền
+    private Map<String, Object[][]> permissionDetailsMap;
+
     public PhanQuyen() {
+        // Khởi tạo Map và dữ liệu giả lập
+        permissionDetailsMap = new HashMap<>();
+        initializePermissionDetails();
+
         // Set up FlatLaf theme
         FlatLightLaf.setup();
 
@@ -41,6 +51,74 @@ public class PhanQuyen extends JPanel {
 
         // Set background color for the panel
         setBackground(backgroundColor);
+    }
+
+    // Khởi tạo dữ liệu giả lập cho danh sách quyền của từng nhóm quyền
+    private void initializePermissionDetails() {
+        // Nhóm quyền "Admin" (Mã quyền: 1)
+        permissionDetailsMap.put("1", new Object[][]{
+            {"Quản lý khách hàng", true, true, true, true},
+            {"Quản lý khu vực kho", true, true, true, true},
+            {"Quản lý chung cấp", true, true, true, true},
+            {"Quản lý nhập hàng", true, true, true, true},
+            {"Quản lý nhóm quyền", true, true, true, true},
+            {"Quản lý sản phẩm", true, true, true, true},
+            {"Quản lý tài khoản", true, true, true, true},
+            {"Quản lý thống kê", true, true, true, true},
+            {"Quản lý xuất hàng", true, true, true, true}
+        });
+
+        // Nhóm quyền "User" (Mã quyền: 2)
+        permissionDetailsMap.put("2", new Object[][]{
+            {"Quản lý khách hàng", true, false, false, false},
+            {"Quản lý khu vực kho", true, false, false, false},
+            {"Quản lý chung cấp", true, false, false, false},
+            {"Quản lý nhập hàng", true, false, false, false},
+            {"Quản lý nhóm quyền", false, false, false, false},
+            {"Quản lý sản phẩm", true, false, false, false},
+            {"Quản lý tài khoản", false, false, false, false},
+            {"Quản lý thống kê", true, false, false, false},
+            {"Quản lý xuất hàng", true, false, false, false}
+        });
+
+        // Nhóm quyền "Nhân viên" (Mã quyền: 3)
+        permissionDetailsMap.put("3", new Object[][]{
+            {"Quản lý khách hàng", true, true, false, false},
+            {"Quản lý khu vực kho", true, false, false, false},
+            {"Quản lý chung cấp", true, false, false, false},
+            {"Quản lý nhập hàng", true, true, false, false},
+            {"Quản lý nhóm quyền", false, false, false, false},
+            {"Quản lý sản phẩm", true, true, false, false},
+            {"Quản lý tài khoản", false, false, false, false},
+            {"Quản lý thống kê", false, false, false, false},
+            {"Quản lý xuất hàng", true, true, false, false}
+        });
+
+        // Nhóm quyền "Quản lý" (Mã quyền: 4)
+        permissionDetailsMap.put("4", new Object[][]{
+            {"Quản lý khách hàng", true, true, true, false},
+            {"Quản lý khu vực kho", true, true, true, false},
+            {"Quản lý chung cấp", true, true, true, false},
+            {"Quản lý nhập hàng", true, true, true, false},
+            {"Quản lý nhóm quyền", true, false, false, false},
+            {"Quản lý sản phẩm", true, true, true, false},
+            {"Quản lý tài khoản", true, false, false, false},
+            {"Quản lý thống kê", true, true, true, false},
+            {"Quản lý xuất hàng", true, true, true, false}
+        });
+
+        // Nhóm quyền "Kế toán" (Mã quyền: 5)
+        permissionDetailsMap.put("5", new Object[][]{
+            {"Quản lý khách hàng", true, false, false, false},
+            {"Quản lý khu vực kho", false, false, false, false},
+            {"Quản lý chung cấp", true, false, false, false},
+            {"Quản lý nhập hàng", true, false, false, false},
+            {"Quản lý nhóm quyền", false, false, false, false},
+            {"Quản lý sản phẩm", false, false, false, false},
+            {"Quản lý tài khoản", false, false, false, false},
+            {"Quản lý thống kê", true, true, true, false},
+            {"Quản lý xuất hàng", true, false, false, false}
+        });
     }
 
     // Method to create top panel (includes function bar and search panel)
@@ -60,8 +138,63 @@ public class PhanQuyen extends JPanel {
         // Button actions for toolbar
         functionBar.setButtonActionListener("create", this::showAddPermissionDialog);
         functionBar.setButtonActionListener("update", this::showEditPermissionDialog);
+        functionBar.setButtonActionListener("detail", this::showPermissionDetailDialog);
+        functionBar.setButtonActionListener("delete", this::deletePermission);
+        functionBar.setButtonActionListener("import", this::importPermissions);
+        functionBar.setButtonActionListener("export", this::exportPermissions);
 
         return topPanel;
+    }
+
+    private void showPermissionDetailDialog() {
+        int selectedRow = table.getSelectedRow();
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn một nhóm quyền để xem chi tiết!", "Cảnh báo", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        int modelRow = table.convertRowIndexToModel(selectedRow);
+        String permissionId = table.getValueAt(modelRow, 0).toString();
+        String roleName = table.getValueAt(modelRow, 1).toString();
+
+        // Lấy danh sách quyền từ Map dựa trên permissionId
+        Object[][] permissionData = permissionDetailsMap.getOrDefault(permissionId, new Object[][]{});
+
+        // Mở PermissionDetailView
+        ChiTietPhanQuyen detailView = new ChiTietPhanQuyen(permissionId, roleName, permissionData);
+        detailView.setVisible(true);
+    }
+
+    private void deletePermission() {
+        int selectedRow = table.getSelectedRow();
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn một nhóm quyền để xóa!", "Cảnh báo", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        int confirm = JOptionPane.showConfirmDialog(this, "Bạn có chắc chắn muốn xóa nhóm quyền này?", "Xác nhận xóa", JOptionPane.YES_NO_OPTION);
+        if (confirm == JOptionPane.YES_OPTION) {
+            int modelRow = table.convertRowIndexToModel(selectedRow);
+            String permissionId = table.getValueAt(modelRow, 0).toString();
+            DefaultTableModel model = (DefaultTableModel) table.getModel();
+            model.removeRow(modelRow);
+
+            // Xóa dữ liệu khỏi Map
+            permissionDetailsMap.remove(permissionId);
+
+            // Cập nhật lại STT
+            for (int i = 0; i < table.getRowCount(); i++) {
+                table.setValueAt(i + 1, i, 0);
+            }
+        }
+    }
+
+    private void importPermissions() {
+        JOptionPane.showMessageDialog(this, "Chức năng nhập nhóm quyền chưa được triển khai!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private void exportPermissions() {
+        JOptionPane.showMessageDialog(this, "Chức năng xuất nhóm quyền chưa được triển khai!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
     }
 
     private void showAddPermissionDialog() {
@@ -175,9 +308,18 @@ public class PhanQuyen extends JPanel {
             // Thêm vào bảng chính với mã quyền tự động tăng
             DefaultTableModel model = (DefaultTableModel) table.getModel();
             int newId = table.getRowCount() + 1;
-            model.addRow(new Object[]{newId, roleName});
+            String newPermissionId = String.valueOf(newId);
+            model.addRow(new Object[]{newPermissionId, roleName});
 
-            // Ở đây bạn có thể lưu thông tin quyền (các checkbox) vào một cấu trúc dữ liệu khác
+            // Lưu danh sách quyền vào Map
+            Object[][] permissionData = new Object[data.length][columns.length];
+            for (int i = 0; i < data.length; i++) {
+                for (int j = 0; j < columns.length; j++) {
+                    permissionData[i][j] = permissionModel.getValueAt(i, j);
+                }
+            }
+            permissionDetailsMap.put(newPermissionId, permissionData);
+
             dialog.dispose();
         });
 
@@ -200,6 +342,19 @@ public class PhanQuyen extends JPanel {
         int modelRow = table.convertRowIndexToModel(selectedRow);
         String id = table.getValueAt(modelRow, 0).toString();
         String roleName = table.getValueAt(modelRow, 1).toString();
+
+        // Lấy danh sách quyền từ Map
+        Object[][] permissionData = permissionDetailsMap.getOrDefault(id, new Object[][]{
+            {"Quản lý khách hàng", false, false, false, false},
+            {"Quản lý khu vực kho", false, false, false, false},
+            {"Quản lý chung cấp", false, false, false, false},
+            {"Quản lý nhập hàng", false, false, false, false},
+            {"Quản lý nhóm quyền", false, false, false, false},
+            {"Quản lý sản phẩm", false, false, false, false},
+            {"Quản lý tài khoản", false, false, false, false},
+            {"Quản lý thống kê", false, false, false, false},
+            {"Quản lý xuất hàng", false, false, false, false}
+        });
 
         JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Chỉnh Sửa Nhóm Quyền", true);
         dialog.setSize(900, 700);
@@ -240,19 +395,7 @@ public class PhanQuyen extends JPanel {
 
         // Bảng quyền
         String[] columns = {"", "Xem", "Tạo mới", "Cập nhật", "Xóa"};
-        Object[][] data = {
-            {"Quản lý khách hàng", false, false, false, false},
-            {"Quản lý khu vực kho", false, false, false, false},
-            {"Quản lý chung cấp", false, false, false, false},
-            {"Quản lý nhập hàng", false, false, false, false},
-            {"Quản lý nhóm quyền", false, false, false, false},
-            {"Quản lý sản phẩm", false, false, false, false},
-            {"Quản lý tài khoản", false, false, false, false},
-            {"Quản lý thống kê", false, false, false, false},
-            {"Quản lý xuất hàng", false, false, false, false}
-        };
-
-        DefaultTableModel permissionModel = new DefaultTableModel(data, columns) {
+        DefaultTableModel permissionModel = new DefaultTableModel(permissionData, columns) {
             @Override
             public Class<?> getColumnClass(int columnIndex) {
                 return columnIndex == 0 ? String.class : Boolean.class;
@@ -310,6 +453,16 @@ public class PhanQuyen extends JPanel {
 
             // Cập nhật dữ liệu vào bảng
             table.setValueAt(newRoleName, modelRow, 1);
+
+            // Cập nhật danh sách quyền trong Map
+            Object[][] updatedPermissionData = new Object[permissionData.length][columns.length];
+            for (int i = 0; i < permissionData.length; i++) {
+                for (int j = 0; j < columns.length; j++) {
+                    updatedPermissionData[i][j] = permissionModel.getValueAt(i, j);
+                }
+            }
+            permissionDetailsMap.put(id, updatedPermissionData);
+
             dialog.dispose();
         });
 
@@ -387,14 +540,14 @@ public class PhanQuyen extends JPanel {
             {"5", "Kế toán"}
         };
 
-        DefaultTableModel model = new DefaultTableModel(data, columns) {
+        tableModel = new DefaultTableModel(data, columns) {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
             }
         };
 
-        table = new JTable(model);
+        table = new JTable(tableModel);
         table.setRowHeight(35);
         table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 16));
         table.setFont(new Font("Segoe UI", Font.PLAIN, 14));

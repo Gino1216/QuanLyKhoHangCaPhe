@@ -1,12 +1,17 @@
 package View;
 
+import View.Dialog.CreaterPhieuXuat;
 import Gui.InputDate;
 import Gui.MainFunction;
 import com.formdev.flatlaf.FlatLightLaf;
+import DTO.PhieuXuatDTO;
+import View.Dialog.ChiTietXuat;
 import java.awt.*;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -25,8 +30,10 @@ public class PhieuXuat extends JPanel {
     private DefaultTableModel tableModel;
     private InputDate dateStart, dateEnd;
     private Color backgroundColor = new Color(255, 255, 255);
+    private List<PhieuXuatDTO> exportEntries;
 
     public PhieuXuat() {
+        exportEntries = new ArrayList<>();
         setLayout(new BorderLayout(0, 8));
         setBackground(backgroundColor);
 
@@ -35,7 +42,7 @@ public class PhieuXuat extends JPanel {
         topPanel.setBackground(backgroundColor);
         topPanel.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
 
-        functionBar = new MainFunction("phieuxuat", new String[]{"create", "detail", "cancel", "export"});
+        functionBar = new MainFunction("phieuxuat", new String[]{"create", "detail", "cancel", "sucess", "export"});
         topPanel.add(functionBar, BorderLayout.WEST);
 
         JPanel searchPanel = createSearchPanel();
@@ -69,7 +76,26 @@ public class PhieuXuat extends JPanel {
                 JOptionPane.showMessageDialog(this, "Vui lòng chọn một phiếu xuất để xem chi tiết!", "Cảnh báo", JOptionPane.WARNING_MESSAGE);
                 return;
             }
-            JOptionPane.showMessageDialog(this, "Chức năng xem chi tiết chưa được triển khai!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+
+            // Lấy thông tin từ hàng được chọn
+            PhieuXuatDTO entry = exportEntries.get(selectedRow);
+            ChiTietXuat detailView = new ChiTietXuat(
+                    entry.getExportId(),
+                    entry.getTime(),
+                    entry.getCustomer(),
+                    entry.getCustomerId(),
+                    entry.getCustomerAddress(),
+                    entry.getCustomerPhone(),
+                    entry.getCustomerEmail(),
+                    entry.getEmployee(),
+                    entry.getEmployeeId(),
+                    entry.getEmployeePhone(),
+                    entry.getEmployeeEmail(),
+                    entry.getTotalAmount(),
+                    entry.getStatus(),
+                    entry.getCoffeeData()
+            );
+            detailView.setVisible(true);
         });
 
         // Nút "Hủy" (cancel)
@@ -79,7 +105,19 @@ public class PhieuXuat extends JPanel {
                 JOptionPane.showMessageDialog(this, "Vui lòng chọn một phiếu xuất để hủy!", "Cảnh báo", JOptionPane.WARNING_MESSAGE);
                 return;
             }
-            table.setValueAt("Hủy", selectedRow, 6); // Cập nhật trạng thái thành "Hủy"
+            table.setValueAt("Hủy", selectedRow, 6);
+            exportEntries.get(selectedRow).setStatus("Hủy");
+        });
+
+        // Nút "Duyệt" (sucess)
+        functionBar.setButtonActionListener("sucess", () -> {
+            int selectedRow = table.getSelectedRow();
+            if (selectedRow == -1) {
+                JOptionPane.showMessageDialog(this, "Vui lòng chọn một phiếu xuất để duyệt!", "Cảnh báo", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            table.setValueAt("Đã Duyệt", selectedRow, 6);
+            exportEntries.get(selectedRow).setStatus("Đã Duyệt");
         });
 
         // Nút "Xuất" (export)
@@ -173,12 +211,10 @@ public class PhieuXuat extends JPanel {
         cbbEmployee.setPreferredSize(new Dimension(200, 35));
         leftPanel.add(cbbEmployee, gbc);
 
-        // --- TỪ NGÀY ---
         gbc.gridy++;
         dateStart = new InputDate("Từ ngày", 200, 70);
         leftPanel.add(dateStart, gbc);
 
-        // --- ĐẾN NGÀY ---
         gbc.gridy++;
         dateEnd = new InputDate("Đến ngày", 200, 70);
         leftPanel.add(dateEnd, gbc);
@@ -206,18 +242,41 @@ public class PhieuXuat extends JPanel {
 
     private JScrollPane createTable() {
         String[] columns = {"STT", "Mã phiếu xuất", "Khách hàng", "Nhân viên xuất", "Thời gian", "Tổng tiền", "Trạng thái"};
-        Object[][] data = {
-            {1, "PX001", "Nguyễn Văn A", "Trần Thị B", "2025-04-14 08:00", "10.000.000", "Đã duyệt"},
-            {2, "PX002", "Lê Văn C", "Phạm Văn D", "2025-04-13 14:30", "6.000.000", "Chưa duyệt"},
-            {3, "PX003", "Trần Thị E", "Ngô Văn F", "2025-04-12 10:15", "12.500.000", "Đã duyệt"}
-        };
-
-        tableModel = new DefaultTableModel(data, columns) {
+        tableModel = new DefaultTableModel(new Object[][]{}, columns) {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
             }
         };
+
+        // Thêm dữ liệu giả lập vào danh sách exportEntries và bảng
+        Object[][] coffeeData1 = {
+            {1, "CF001", "Cafe Đắk Lắk", "Arabica", "50", "150000", "10"},
+            {2, "CF002", "Cafe Buôn Ma Thuột", "Robusta", "50", "140000", "5"}
+        };
+        exportEntries.add(new PhieuXuatDTO("PX001", "Nguyễn Văn A", "KH001", "123 Đường Láng, Hà Nội", "0912345678", "nguyenvana@example.com",
+                "Trần Thị B", "NV001", "0987654321", "tranthib@example.com",
+                "2025-04-14 08:00", "10.000.000đ", "Đã duyệt", coffeeData1));
+
+        Object[][] coffeeData2 = {
+            {1, "CF003", "Cafe Lâm Đồng", "Culi", "50", "130000", "8"}
+        };
+        exportEntries.add(new PhieuXuatDTO("PX002", "Lê Văn C", "KH002", "456 Nguyễn Trãi, TP.HCM", "0923456789", "levanc@example.com",
+                "Phạm Văn D", "NV002", "0976543210", "phamvand@example.com",
+                "2025-04-13 14:30", "6.000.000đ", "Chưa duyệt", coffeeData2));
+
+        Object[][] coffeeData3 = {
+            {1, "CF004", "Cafe Gia Lai", "Blend", "50", "145000", "12"},
+            {2, "CF005", "Cafe Khe Sanh", "Robusta", "50", "135000", "6"}
+        };
+        exportEntries.add(new PhieuXuatDTO("PX003", "Trần Thị E", "KH003", "789 Lê Lợi, Đà Nẵng", "0934567890", "tranthie@example.com",
+                "Ngô Văn F", "NV003", "0965432109", "ngovanf@example.com",
+                "2025-04-12 10:15", "12.500.000đ", "Đã duyệt", coffeeData3));
+
+        // Thêm dữ liệu vào bảng
+        for (int i = 0; i < exportEntries.size(); i++) {
+            tableModel.addRow(exportEntries.get(i).toTableRow(i + 1));
+        }
 
         table = new JTable(tableModel);
         table.setRowHeight(35);
@@ -245,15 +304,15 @@ public class PhieuXuat extends JPanel {
 
         int[] columnIndices;
         if ("Tất cả".equals(selectedFilter)) {
-            columnIndices = new int[]{0, 1, 2, 3, 4}; // STT, Mã phiếu xuất, Khách hàng, Nhân viên xuất, Thời gian
+            columnIndices = new int[]{0, 1, 2, 3, 4};
         } else {
             int columnIndex = switch (selectedFilter) {
                 case "Khách hàng" ->
-                    2; // Cột "Khách hàng"
+                    2;
                 case "Địa chỉ" ->
-                    2;    // Không có cột "Địa chỉ", tạm ánh xạ đến "Khách hàng"
+                    2;
                 case "Email" ->
-                    2;      // Không có cột "Email", tạm ánh xạ đến "Khách hàng"
+                    2;
                 default ->
                     0;
             };
@@ -268,12 +327,34 @@ public class PhieuXuat extends JPanel {
         System.out.println("Dữ liệu đã được làm mới.");
     }
 
-    // Phương thức để thêm phiếu xuất mới vào bảng dữ liệu ảo
-    public void addPhieuXuat(String receiptId, String customer, String employee, long totalAmount) {
+    public void addPhieuXuat(String receiptId, String customer, String customerId, String customerAddress, String customerPhone, String customerEmail,
+            String employee, String employeeId, String employeePhone, String employeeEmail,
+            long totalAmount, Object[][] coffeeData) {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm");
         String currentDate = sdf.format(new Date());
         DecimalFormat df = new DecimalFormat("#,###");
         int stt = table.getRowCount() + 1;
-        tableModel.addRow(new Object[]{stt, receiptId, customer, employee, currentDate, df.format(totalAmount) + "đ", "Chưa duyệt"});
+
+        // Tạo một PhieuNhapDTO mới
+        PhieuXuatDTO entry = new PhieuXuatDTO(
+                receiptId,
+                customer,
+                customerId,
+                customerAddress,
+                customerPhone,
+                customerEmail,
+                employee,
+                employeeId,
+                employeePhone,
+                employeeEmail,
+                currentDate,
+                df.format(totalAmount) + "đ",
+                "Chưa duyệt",
+                coffeeData
+        );
+
+        // Thêm vào danh sách và bảng
+        exportEntries.add(entry);
+        tableModel.addRow(entry.toTableRow(stt));
     }
 }

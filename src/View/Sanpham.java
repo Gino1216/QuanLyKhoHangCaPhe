@@ -1,50 +1,18 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package View;
 
 import Gui.InputDate;
 import Gui.MainFunction;
+import View.Dialog.ChiTietSanPham;
 import com.formdev.flatlaf.FlatLightLaf;
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.FlowLayout;
-import java.awt.Font;
-import java.awt.Frame;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import javax.swing.BorderFactory;
-import javax.swing.ImageIcon;
-import javax.swing.JButton;
-import javax.swing.JComboBox;
-import javax.swing.JDialog;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTable;
-import javax.swing.JTextField;
-import javax.swing.RowFilter;
-import javax.swing.SwingUtilities;
+import java.awt.*;
+import java.awt.event.*;
+import java.text.*;
+import java.util.*;
+import javax.swing.*;
 import javax.swing.border.EmptyBorder;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
-import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableModel;
-import javax.swing.table.TableRowSorter;
+import javax.swing.event.*;
+import javax.swing.table.*;
 
-/**
- *
- * @author hjepr
- */
 public class Sanpham extends JPanel {
 
     private MainFunction functionBar;
@@ -58,73 +26,60 @@ public class Sanpham extends JPanel {
     private Color accentColor = new Color(52, 73, 94);
 
     public Sanpham() {
-        // Set up FlatLaf theme
         FlatLightLaf.setup();
-
-        // Configure JPanel layout
         setLayout(new BorderLayout(0, 8));
+        setBackground(backgroundColor);
 
-        // Create top panel for the toolbar and search panel
         JPanel topPanel = createTopPanel();
         add(topPanel, BorderLayout.NORTH);
 
-        // Create table
         scroll = createTable();
         add(scroll, BorderLayout.CENTER);
-
-        // Set background color for the panel
-        setBackground(backgroundColor);
     }
 
-    // Method to create top panel (includes function bar and search/filter panel)
     private JPanel createTopPanel() {
         JPanel topPanel = new JPanel(new BorderLayout());
         topPanel.setBackground(backgroundColor);
         topPanel.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
 
-        // Initialize main function toolbar
-        functionBar = new MainFunction("ncc", new String[]{"create", "update", "delete", "detail", "import", "export"});
+        functionBar = new MainFunction("sanpham", new String[]{"create", "update", "delete", "detail", "import", "export"});
         topPanel.add(functionBar, BorderLayout.WEST);
 
-        // Create and add search/filter panel to the top panel
         JPanel searchPanel = createSearchPanel();
         topPanel.add(searchPanel, BorderLayout.EAST);
 
-        // Button actions for toolbar
         functionBar.setButtonActionListener("create", this::showAddProductDialog);
         functionBar.setButtonActionListener("update", this::showEditProductDialog);
+        functionBar.setButtonActionListener("delete", this::deleteProduct);
+        functionBar.setButtonActionListener("detail", this::showProductDetails);
+        functionBar.setButtonActionListener("import", () -> JOptionPane.showMessageDialog(this, "Chức năng nhập chưa được triển khai!", "Thông báo", JOptionPane.INFORMATION_MESSAGE));
+        functionBar.setButtonActionListener("export", () -> JOptionPane.showMessageDialog(this, "Chức năng xuất chưa được triển khai!", "Thông báo", JOptionPane.INFORMATION_MESSAGE));
 
         return topPanel;
     }
 
     private void showAddProductDialog() {
         JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Thêm Sản Phẩm Mới", true);
-        dialog.setSize(900, 700); // Tăng kích thước dialog để chứa các thành phần lớn hơn
+        dialog.setSize(900, 700);
         dialog.setLocationRelativeTo(this);
         dialog.setLayout(new BorderLayout());
 
-        // Header
         JLabel header = new JLabel("THÊM SẢN PHẨM MỚI", JLabel.CENTER);
-        header.setFont(new Font("Segoe UI", Font.BOLD, 20)); // Tăng font chữ tiêu đề
+        header.setFont(new Font("Segoe UI", Font.BOLD, 20));
         header.setForeground(Color.WHITE);
         header.setBackground(new Color(59, 130, 246));
         header.setOpaque(true);
-        header.setBorder(new EmptyBorder(15, 0, 15, 0)); // Tăng padding cho tiêu đề
+        header.setBorder(new EmptyBorder(15, 0, 15, 0));
         dialog.add(header, BorderLayout.NORTH);
 
-        // Form panel
         JPanel formPanel = new JPanel(new GridBagLayout());
-        formPanel.setBorder(new EmptyBorder(20, 20, 20, 20)); // Padding cho form
-        formPanel.setBackground(new Color(255, 255, 255, 255)); // Màu nền trắng
+        formPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
+        formPanel.setBackground(Color.WHITE);
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(10, 10, 10, 10); // Khoảng cách giữa các thành phần
+        gbc.insets = new Insets(10, 10, 10, 10);
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        // Các nhãn và trường nhập liệu
-        String[] labels = {
-            "Mã sản phẩm", "Tên sản phẩm", "Số lượng", "Hạn sử dụng", "Mã nguyên liệu", "Khu vực kho"
-        };
-
+        String[] labels = {"Mã sản phẩm", "Tên sản phẩm", "Số lượng", "Hạn sử dụng", "Mã nguyên liệu", "Khu vực kho"};
         JTextField[] textFields = new JTextField[labels.length];
         JComboBox<String>[] comboBoxes = new JComboBox[labels.length];
 
@@ -133,33 +88,30 @@ public class Sanpham extends JPanel {
             gbc.gridwidth = 1;
             gbc.anchor = GridBagConstraints.WEST;
 
-            // Nhãn
             JLabel label = new JLabel(labels[i]);
             label.setForeground(Color.BLACK);
-            label.setFont(new Font("Segoe UI", Font.PLAIN, 16)); // Tăng font chữ cho nhãn
+            label.setFont(new Font("Segoe UI", Font.PLAIN, 16));
             gbc.gridx = i % 2 == 0 ? 0 : 2;
             gbc.gridy = row;
             formPanel.add(label, gbc);
 
-            // Trường nhập liệu hoặc combobox
             if (labels[i].equals("Khu vực kho")) {
                 comboBoxes[i] = new JComboBox<>(new String[]{"", "Khu vực A", "Khu vực B", "Khu vực C"});
-                comboBoxes[i].setFont(new Font("Segoe UI", Font.PLAIN, 16)); // Tăng font chữ
-                comboBoxes[i].setPreferredSize(new Dimension(200, 40)); // Kích thước combobox
+                comboBoxes[i].setFont(new Font("Segoe UI", Font.PLAIN, 16));
+                comboBoxes[i].setPreferredSize(new Dimension(200, 40));
                 gbc.gridx = i % 2 == 0 ? 1 : 3;
                 gbc.gridy = row;
                 formPanel.add(comboBoxes[i], gbc);
             } else {
                 textFields[i] = new JTextField(15);
-                textFields[i].setFont(new Font("Segoe UI", Font.PLAIN, 16)); // Tăng font chữ
-                textFields[i].setPreferredSize(new Dimension(200, 40)); // Kích thước textfield
-                // Thêm placeholder cho Hạn sử dụng
+                textFields[i].setFont(new Font("Segoe UI", Font.PLAIN, 16));
+                textFields[i].setPreferredSize(new Dimension(200, 40));
                 if (labels[i].equals("Hạn sử dụng")) {
-                    textFields[i].setText("dd/MM/yyyy"); // Placeholder hướng dẫn định dạng
-                    textFields[i].setForeground(Color.GRAY); // Màu chữ placeholder
-                    textFields[i].addFocusListener(new java.awt.event.FocusAdapter() {
+                    textFields[i].setText("dd/MM/yyyy");
+                    textFields[i].setForeground(Color.GRAY);
+                    textFields[i].addFocusListener(new FocusAdapter() {
                         @Override
-                        public void focusGained(java.awt.event.FocusEvent evt) {
+                        public void focusGained(FocusEvent evt) {
                             JTextField textField = (JTextField) evt.getSource();
                             if (textField.getText().equals("dd/MM/yyyy")) {
                                 textField.setText("");
@@ -168,7 +120,7 @@ public class Sanpham extends JPanel {
                         }
 
                         @Override
-                        public void focusLost(java.awt.event.FocusEvent evt) {
+                        public void focusLost(FocusEvent evt) {
                             JTextField textField = (JTextField) evt.getSource();
                             if (textField.getText().isEmpty()) {
                                 textField.setText("dd/MM/yyyy");
@@ -189,59 +141,61 @@ public class Sanpham extends JPanel {
 
         dialog.add(formPanel, BorderLayout.CENTER);
 
-        // Buttons panel
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 15)); // Tăng khoảng cách giữa các nút
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 15));
         buttonPanel.setBackground(new Color(173, 216, 230));
         JButton btnAdd = new JButton("Tạo cấu hình");
         btnAdd.setBackground(new Color(59, 130, 246));
         btnAdd.setForeground(Color.WHITE);
-        btnAdd.setFont(new Font("Segoe UI", Font.BOLD, 16)); // Tăng font chữ cho nút
-        btnAdd.setPreferredSize(new Dimension(180, 50)); // Tăng kích thước nút
-        btnAdd.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20)); // Tăng padding cho nút
+        btnAdd.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        btnAdd.setPreferredSize(new Dimension(180, 50));
+        btnAdd.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
 
         JButton btnCancel = new JButton("Hủy bỏ");
         btnCancel.setBackground(new Color(239, 68, 68));
         btnCancel.setForeground(Color.WHITE);
-        btnCancel.setFont(new Font("Segoe UI", Font.BOLD, 16)); // Tăng font chữ cho nút
-        btnCancel.setPreferredSize(new Dimension(180, 50)); // Tăng kích thước nút
-        btnCancel.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20)); // Tăng padding cho nút
+        btnCancel.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        btnCancel.setPreferredSize(new Dimension(180, 50));
+        btnCancel.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
 
-        btnAdd.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                // Kiểm tra dữ liệu đầu vào
-                String id = textFields[0].getText(); // Mã sản phẩm
-                String name = textFields[1].getText(); // Tên sản phẩm
-                String quantity = textFields[2].getText(); // Số lượng
-                String expiryDate = textFields[3].getText(); // Hạn sử dụng
-                String materialCode = textFields[4].getText(); // Mã nguyên liệu
-                String storageArea = comboBoxes[5] != null ? (String) comboBoxes[5].getSelectedItem() : ""; // Khu vực kho
+        btnAdd.addActionListener(e -> {
+            String id = textFields[0].getText();
+            String name = textFields[1].getText();
+            String quantity = textFields[2].getText();
+            String expiryDate = textFields[3].getText();
+            String materialCode = textFields[4].getText();
+            String storageArea = comboBoxes[5] != null ? (String) comboBoxes[5].getSelectedItem() : "";
 
-                // Kiểm tra định dạng ngày tháng cho Hạn sử dụng
-                SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
-                dateFormat.setLenient(false); // Không cho phép định dạng lỏng lẻo
-                try {
-                    if (!expiryDate.equals("dd/MM/yyyy")) {
-                        dateFormat.parse(expiryDate); // Thử phân tích ngày
-                    } else {
-                        expiryDate = ""; // Nếu vẫn là placeholder thì để rỗng
-                    }
-                } catch (ParseException ex) {
-                    JOptionPane.showMessageDialog(dialog, "Hạn sử dụng phải có định dạng dd/MM/yyyy!", "Lỗi", JOptionPane.ERROR_MESSAGE);
-                    return;
+            SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
+            dateFormat.setLenient(false);
+            try {
+                if (!expiryDate.equals("dd/MM/yyyy")) {
+                    dateFormat.parse(expiryDate);
+                } else {
+                    expiryDate = "";
                 }
-
-                // Kiểm tra các trường bắt buộc
-                if (id.isEmpty() || name.isEmpty() || quantity.isEmpty() || expiryDate.isEmpty() || materialCode.isEmpty() || storageArea.isEmpty()) {
-                    JOptionPane.showMessageDialog(dialog, "Vui lòng điền đầy đủ thông tin!", "Lỗi", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-
-                // Thêm vào bảng
-                DefaultTableModel model = (DefaultTableModel) table.getModel();
-                model.addRow(new Object[]{id, name, quantity, expiryDate, materialCode});
-                dialog.dispose();
+            } catch (ParseException ex) {
+                JOptionPane.showMessageDialog(dialog, "Hạn sử dụng phải có định dạng dd/MM/yyyy!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
             }
+
+            if (id.isEmpty() || name.isEmpty() || quantity.isEmpty() || expiryDate.isEmpty() || materialCode.isEmpty() || storageArea.isEmpty()) {
+                JOptionPane.showMessageDialog(dialog, "Vui lòng điền đầy đủ thông tin!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            try {
+                int qty = Integer.parseInt(quantity);
+                if (qty < 0) {
+                    throw new NumberFormatException();
+                }
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(dialog, "Số lượng phải là một số không âm!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            tableModel.addRow(new Object[]{id, name, quantity, expiryDate, materialCode, storageArea});
+            JOptionPane.showMessageDialog(dialog, "Thêm sản phẩm thành công!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+            dialog.dispose();
         });
 
         btnCancel.addActionListener(e -> dialog.dispose());
@@ -266,34 +220,29 @@ public class Sanpham extends JPanel {
         String quantity = table.getValueAt(modelRow, 2).toString();
         String expiryDate = table.getValueAt(modelRow, 3).toString();
         String materialCode = table.getValueAt(modelRow, 4).toString();
+        String storageArea = table.getValueAt(modelRow, 5).toString();
 
         JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Chỉnh Sửa Sản Phẩm", true);
-        dialog.setSize(900, 700); // Tăng kích thước dialog để chứa các thành phần lớn hơn
+        dialog.setSize(900, 700);
         dialog.setLocationRelativeTo(this);
         dialog.setLayout(new BorderLayout());
 
-        // Header
         JLabel header = new JLabel("CHỈNH SỬA SẢN PHẨM", JLabel.CENTER);
-        header.setFont(new Font("Segoe UI", Font.BOLD, 20)); // Tăng font chữ tiêu đề
+        header.setFont(new Font("Segoe UI", Font.BOLD, 20));
         header.setForeground(Color.WHITE);
         header.setBackground(new Color(59, 130, 246));
         header.setOpaque(true);
-        header.setBorder(new EmptyBorder(15, 0, 15, 0)); // Tăng padding cho tiêu đề
+        header.setBorder(new EmptyBorder(15, 0, 15, 0));
         dialog.add(header, BorderLayout.NORTH);
 
-        // Form panel
         JPanel formPanel = new JPanel(new GridBagLayout());
-        formPanel.setBorder(new EmptyBorder(20, 20, 20, 20)); // Padding cho form
-        formPanel.setBackground(new Color(255, 255, 255, 255)); // Màu nền trắng
+        formPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
+        formPanel.setBackground(Color.WHITE);
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(10, 10, 10, 10); // Khoảng cách giữa các thành phần
+        gbc.insets = new Insets(10, 10, 10, 10);
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        // Các nhãn và trường nhập liệu
-        String[] labels = {
-            "Mã sản phẩm", "Tên sản phẩm", "Số lượng", "Hạn sử dụng", "Mã nguyên liệu", "Khu vực kho"
-        };
-
+        String[] labels = {"Mã sản phẩm", "Tên sản phẩm", "Số lượng", "Hạn sử dụng", "Mã nguyên liệu", "Khu vực kho"};
         JTextField[] textFields = new JTextField[labels.length];
         JComboBox<String>[] comboBoxes = new JComboBox[labels.length];
 
@@ -302,33 +251,31 @@ public class Sanpham extends JPanel {
             gbc.gridwidth = 1;
             gbc.anchor = GridBagConstraints.WEST;
 
-            // Nhãn
             JLabel label = new JLabel(labels[i]);
             label.setForeground(Color.BLACK);
-            label.setFont(new Font("Segoe UI", Font.PLAIN, 16)); // Tăng font chữ cho nhãn
+            label.setFont(new Font("Segoe UI", Font.PLAIN, 16));
             gbc.gridx = i % 2 == 0 ? 0 : 2;
             gbc.gridy = row;
             formPanel.add(label, gbc);
 
-            // Trường nhập liệu hoặc combobox
             if (labels[i].equals("Khu vực kho")) {
                 comboBoxes[i] = new JComboBox<>(new String[]{"", "Khu vực A", "Khu vực B", "Khu vực C"});
-                comboBoxes[i].setFont(new Font("Segoe UI", Font.PLAIN, 16)); // Tăng font chữ
-                comboBoxes[i].setPreferredSize(new Dimension(200, 40)); // Kích thước combobox
+                comboBoxes[i].setFont(new Font("Segoe UI", Font.PLAIN, 16));
+                comboBoxes[i].setPreferredSize(new Dimension(200, 40));
+                comboBoxes[i].setSelectedItem(storageArea);
                 gbc.gridx = i % 2 == 0 ? 1 : 3;
                 gbc.gridy = row;
                 formPanel.add(comboBoxes[i], gbc);
             } else {
                 textFields[i] = new JTextField(15);
-                textFields[i].setFont(new Font("Segoe UI", Font.PLAIN, 16)); // Tăng font chữ
-                textFields[i].setPreferredSize(new Dimension(200, 40)); // Kích thước textfield
-                // Thêm placeholder cho Hạn sử dụng
+                textFields[i].setFont(new Font("Segoe UI", Font.PLAIN, 16));
+                textFields[i].setPreferredSize(new Dimension(200, 40));
                 if (labels[i].equals("Hạn sử dụng")) {
-                    textFields[i].setText("dd/MM/yyyy"); // Placeholder hướng dẫn định dạng
-                    textFields[i].setForeground(Color.GRAY); // Màu chữ placeholder
-                    textFields[i].addFocusListener(new java.awt.event.FocusAdapter() {
+                    textFields[i].setText(expiryDate.isEmpty() ? "dd/MM/yyyy" : expiryDate);
+                    textFields[i].setForeground(expiryDate.isEmpty() ? Color.GRAY : Color.BLACK);
+                    textFields[i].addFocusListener(new FocusAdapter() {
                         @Override
-                        public void focusGained(java.awt.event.FocusEvent evt) {
+                        public void focusGained(FocusEvent evt) {
                             JTextField textField = (JTextField) evt.getSource();
                             if (textField.getText().equals("dd/MM/yyyy")) {
                                 textField.setText("");
@@ -337,7 +284,7 @@ public class Sanpham extends JPanel {
                         }
 
                         @Override
-                        public void focusLost(java.awt.event.FocusEvent evt) {
+                        public void focusLost(FocusEvent evt) {
                             JTextField textField = (JTextField) evt.getSource();
                             if (textField.getText().isEmpty()) {
                                 textField.setText("dd/MM/yyyy");
@@ -345,26 +292,16 @@ public class Sanpham extends JPanel {
                             }
                         }
                     });
-                    // Điền dữ liệu từ bảng nếu không phải placeholder
-                    if (!expiryDate.isEmpty()) {
-                        textFields[i].setText(expiryDate);
-                        textFields[i].setForeground(Color.BLACK);
-                    }
                 } else {
-                    // Điền dữ liệu từ bảng cho các trường khác
                     switch (i) {
-                        case 0:
+                        case 0 ->
                             textFields[i].setText(id);
-                            break;
-                        case 1:
+                        case 1 ->
                             textFields[i].setText(name);
-                            break;
-                        case 2:
+                        case 2 ->
                             textFields[i].setText(quantity);
-                            break;
-                        case 4:
+                        case 4 ->
                             textFields[i].setText(materialCode);
-                            break;
                     }
                 }
                 gbc.gridx = i % 2 == 0 ? 1 : 3;
@@ -379,62 +316,66 @@ public class Sanpham extends JPanel {
 
         dialog.add(formPanel, BorderLayout.CENTER);
 
-        // Buttons panel
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 15)); // Tăng khoảng cách giữa các nút
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 15));
         buttonPanel.setBackground(new Color(173, 216, 230));
         JButton btnSave = new JButton("Lưu thông tin");
         btnSave.setBackground(new Color(59, 130, 246));
         btnSave.setForeground(Color.WHITE);
-        btnSave.setFont(new Font("Segoe UI", Font.BOLD, 16)); // Tăng font chữ cho nút
-        btnSave.setPreferredSize(new Dimension(180, 50)); // Tăng kích thước nút
-        btnSave.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20)); // Tăng padding cho nút
+        btnSave.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        btnSave.setPreferredSize(new Dimension(180, 50));
+        btnSave.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
 
         JButton btnCancel = new JButton("Hủy bỏ");
         btnCancel.setBackground(new Color(239, 68, 68));
         btnCancel.setForeground(Color.WHITE);
-        btnCancel.setFont(new Font("Segoe UI", Font.BOLD, 16)); // Tăng font chữ cho nút
-        btnCancel.setPreferredSize(new Dimension(180, 50)); // Tăng kích thước nút
-        btnCancel.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20)); // Tăng padding cho nút
+        btnCancel.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        btnCancel.setPreferredSize(new Dimension(180, 50));
+        btnCancel.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
 
-        btnSave.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                // Kiểm tra dữ liệu đầu vào
-                String newId = textFields[0].getText(); // Mã sản phẩm
-                String newName = textFields[1].getText(); // Tên sản phẩm
-                String newQuantity = textFields[2].getText(); // Số lượng
-                String newExpiryDate = textFields[3].getText(); // Hạn sử dụng
-                String newMaterialCode = textFields[4].getText(); // Mã nguyên liệu
-                String newStorageArea = comboBoxes[5] != null ? (String) comboBoxes[5].getSelectedItem() : ""; // Khu vực kho
+        btnSave.addActionListener(e -> {
+            String newId = textFields[0].getText();
+            String newName = textFields[1].getText();
+            String newQuantity = textFields[2].getText();
+            String newExpiryDate = textFields[3].getText();
+            String newMaterialCode = textFields[4].getText();
+            String newStorageArea = comboBoxes[5] != null ? (String) comboBoxes[5].getSelectedItem() : "";
 
-                // Kiểm tra định dạng ngày tháng cho Hạn sử dụng
-                SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
-                dateFormat.setLenient(false); // Không cho phép định dạng lỏng lẻo
-                try {
-                    if (!newExpiryDate.equals("dd/MM/yyyy")) {
-                        dateFormat.parse(newExpiryDate); // Thử phân tích ngày
-                    } else {
-                        newExpiryDate = ""; // Nếu vẫn là placeholder thì để rỗng
-                    }
-                } catch (ParseException ex) {
-                    JOptionPane.showMessageDialog(dialog, "Hạn sử dụng phải có định dạng dd/MM/yyyy!", "Lỗi", JOptionPane.ERROR_MESSAGE);
-                    return;
+            SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
+            dateFormat.setLenient(false);
+            try {
+                if (!newExpiryDate.equals("dd/MM/yyyy")) {
+                    dateFormat.parse(newExpiryDate);
+                } else {
+                    newExpiryDate = "";
                 }
-
-                // Kiểm tra các trường bắt buộc
-                if (newId.isEmpty() || newName.isEmpty() || newQuantity.isEmpty() || newExpiryDate.isEmpty() || newMaterialCode.isEmpty()) {
-                    JOptionPane.showMessageDialog(dialog, "Vui lòng điền đầy đủ thông tin!", "Lỗi", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-
-                // Cập nhật dữ liệu vào bảng
-                table.setValueAt(newId, modelRow, 0);
-                table.setValueAt(newName, modelRow, 1);
-                table.setValueAt(newQuantity, modelRow, 2);
-                table.setValueAt(newExpiryDate, modelRow, 3);
-                table.setValueAt(newMaterialCode, modelRow, 4);
-                dialog.dispose();
+            } catch (ParseException ex) {
+                JOptionPane.showMessageDialog(dialog, "Hạn sử dụng phải có định dạng dd/MM/yyyy!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
             }
+
+            if (newId.isEmpty() || newName.isEmpty() || newQuantity.isEmpty() || newExpiryDate.isEmpty() || newMaterialCode.isEmpty() || newStorageArea.isEmpty()) {
+                JOptionPane.showMessageDialog(dialog, "Vui lòng điền đầy đủ thông tin!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            try {
+                int qty = Integer.parseInt(newQuantity);
+                if (qty < 0) {
+                    throw new NumberFormatException();
+                }
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(dialog, "Số lượng phải là một số không âm!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            table.setValueAt(newId, modelRow, 0);
+            table.setValueAt(newName, modelRow, 1);
+            table.setValueAt(newQuantity, modelRow, 2);
+            table.setValueAt(newExpiryDate, modelRow, 3);
+            table.setValueAt(newMaterialCode, modelRow, 4);
+            table.setValueAt(newStorageArea, modelRow, 5);
+            JOptionPane.showMessageDialog(dialog, "Cập nhật sản phẩm thành công!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+            dialog.dispose();
         });
 
         btnCancel.addActionListener(e -> dialog.dispose());
@@ -446,11 +387,44 @@ public class Sanpham extends JPanel {
         dialog.setVisible(true);
     }
 
+    private void deleteProduct() {
+        int selectedRow = table.getSelectedRow();
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn một sản phẩm để xóa!", "Cảnh báo", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        int choice = JOptionPane.showConfirmDialog(this, "Bạn có chắc muốn xóa sản phẩm này?", "Xác nhận xóa", JOptionPane.YES_NO_OPTION);
+        if (choice == JOptionPane.YES_OPTION) {
+            tableModel.removeRow(table.convertRowIndexToModel(selectedRow));
+            JOptionPane.showMessageDialog(this, "Xóa sản phẩm thành công!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+        }
+    }
+
+    private void showProductDetails() {
+        int selectedRow = table.getSelectedRow();
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn một sản phẩm để xem chi tiết!", "Cảnh báo", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        int modelRow = table.convertRowIndexToModel(selectedRow);
+        String id = table.getValueAt(modelRow, 0).toString();
+        String name = table.getValueAt(modelRow, 1).toString();
+        String quantity = table.getValueAt(modelRow, 2).toString();
+        String expiryDate = table.getValueAt(modelRow, 3).toString();
+        String materialCode = table.getValueAt(modelRow, 4).toString();
+        String storageArea = table.getValueAt(modelRow, 5).toString();
+
+        ChiTietSanPham detailDialog = new ChiTietSanPham(id, name, quantity, expiryDate, materialCode, storageArea);
+        detailDialog.setVisible(true);
+    }
+
     private JPanel createSearchPanel() {
         JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 0));
         searchPanel.setBackground(backgroundColor);
 
-        cbbFilter = new JComboBox<>(new String[]{"Tất cả", "Tên nhà cung cấp", "Địa chỉ", "Email"});
+        cbbFilter = new JComboBox<>(new String[]{"Tất cả", "Mã sản phẩm", "Tên sản phẩm", "Mã nguyên liệu"});
         cbbFilter.setPreferredSize(new Dimension(100, 25));
 
         txtSearch = new JTextField();
@@ -460,7 +434,7 @@ public class Sanpham extends JPanel {
         try {
             btnRefresh.setIcon(new ImageIcon(getClass().getResource("/icon/refresh.svg")));
         } catch (Exception e) {
-            System.err.println("Không tìm thấy icon refresh.png trong /icon/");
+            System.err.println("Không tìm thấy icon refresh.svg trong /icon/");
         }
         btnRefresh.setPreferredSize(new Dimension(150, 35));
 
@@ -501,31 +475,28 @@ public class Sanpham extends JPanel {
         tablePanel.setBackground(backgroundColor);
         tablePanel.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
 
-        // Cột và dữ liệu mẫu
         String[] columns = {"Mã SP", "Tên SP", "Số Lượng", "Hạn Sử Dụng", "Mã NL", "Khu Vực Kho"};
         Object[][] data = {
-            {"SP001", "Cà phê Arabica", 100, "2025-12-31", "NL001"},
-            {"SP002", "Cà phê Robusta", 150, "2025-11-30", "NL002"},
-            {"SP003", "Cà phê Blend", 200, "2025-10-15", "NL003"},
-            {"SP004", "Cà phê Espresso", 120, "2025-08-20", "NL004"},
-            {"SP005", "Cà phê Mocha", 80, "2025-09-05", "NL005"}
+            {"SP001", "Cà phê Arabica", "100", "2025-12-31", "NL001", "Khu vực A"},
+            {"SP002", "Cà phê Robusta", "150", "2025-11-30", "NL002", "Khu vực B"},
+            {"SP003", "Cà phê Blend", "200", "2025-10-15", "NL003", "Khu vực C"},
+            {"SP004", "Cà phê Espresso", "120", "2025-08-20", "NL004", "Khu vực A"},
+            {"SP005", "Cà phê Mocha", "80", "2025-09-05", "NL005", "Khu vực B"}
         };
 
-        DefaultTableModel model = new DefaultTableModel(data, columns) {
+        tableModel = new DefaultTableModel(data, columns) {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
             }
         };
 
-        table = new JTable(model);
+        table = new JTable(tableModel);
         table.setRowHeight(35);
         table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 16));
         table.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         table.setGridColor(new Color(200, 200, 200));
         table.setShowGrid(false);
-
-        // Auto-resize columns
         table.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
 
         JScrollPane scrollPane = new JScrollPane(table);
@@ -546,15 +517,15 @@ public class Sanpham extends JPanel {
 
         int[] columnIndices;
         if ("Tất cả".equals(selectedFilter)) {
-            columnIndices = new int[]{0, 1, 2, 3, 4};
+            columnIndices = new int[]{0, 1, 4};
         } else {
             int columnIndex = switch (selectedFilter) {
-                case "Tên nhà cung cấp" ->
+                case "Mã sản phẩm" ->
+                    0;
+                case "Tên sản phẩm" ->
                     1;
-                case "Địa chỉ" ->
-                    2;
-                case "Email" ->
-                    3;
+                case "Mã nguyên liệu" ->
+                    4;
                 default ->
                     0;
             };
@@ -566,6 +537,7 @@ public class Sanpham extends JPanel {
     }
 
     private void loadData() {
-        System.out.println("Dữ liệu đã được làm mới.");
+        // Placeholder for refreshing data, e.g., from a database
+        tableModel.fireTableDataChanged();
     }
 }
