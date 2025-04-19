@@ -56,7 +56,7 @@ public class Main extends JFrame {
         JPanel statusBar = createStatusBar();
         add(statusBar, BorderLayout.SOUTH);
 
-        // Set first view as Dashboard
+        // Set first view as default (if available)
         if (menuButtons != null && menuButtons.length > 0) {
             menuButtons[0].doClick();
         }
@@ -99,45 +99,44 @@ public class Main extends JFrame {
         sidebar.add(separator);
 
         // Menu items with centered layout
-        String[] menuItems = {
-            "Dashboard", "Sản phẩm", "Phiếu nhập", "Phiếu xuất",
-            "Khách hàng", "Nhà cung cấp", "Nhân viên",
-            "Tài khoản", "Phân quyền", "Ca làm"
-        };
-
+        String[] menuItems = MenuConfig.getMenuItems(account.getRole()); // Sử dụng mã vai trò số
         String[] icons = {
-            "icon/home.svg",
-            "icon/product.svg",
-            "icon/import.svg",
-            "icon/export.svg",
-            "icon/customer.svg",
-            "icon/supplier.svg",
-            "icon/staff.svg",
-            "icon/account.svg",
-            "icon/permission.svg",
-            "icon/statistical.svg"
+                "icon/home.svg",
+                "icon/product.svg",
+                "icon/import.svg",
+                "icon/export.svg",
+                "icon/customer.svg",
+                "icon/supplier.svg",
+                "icon/staff.svg",
+                "icon/account.svg",
+                "icon/permission.svg",
+                "icon/statistical.svg"
         };
 
         menuButtons = new JButton[menuItems.length];
 
         JPanel menuPanel = new JPanel();
-        menuPanel.setLayout(new GridBagLayout());  // Use GridBagLayout for centering
+        menuPanel.setLayout(new GridBagLayout());
         menuPanel.setBackground(lightBackground);
         menuPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridx = 0;
-        gbc.gridy = GridBagConstraints.RELATIVE;  // Stack buttons vertically
-        gbc.anchor = GridBagConstraints.CENTER;    // Center the buttons
-        gbc.fill = GridBagConstraints.HORIZONTAL;  // Đảm bảo nút chiếm toàn bộ chiều rộng
-        gbc.insets = new Insets(5, 0, 5, 0);      // Khoảng cách giữa các nút
+        gbc.gridy = GridBagConstraints.RELATIVE;
+        gbc.anchor = GridBagConstraints.CENTER;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.insets = new Insets(5, 0, 5, 0);
 
         for (int i = 0; i < menuItems.length; i++) {
-            menuButtons[i] = createMenuItem(menuItems[i], icons[i], menuItemColor, hoverColor);
-            menuButtons[i].setPreferredSize(new Dimension(260, 50)); // Kích thước cố định cho nút
+            // Tìm chỉ số của menu item trong danh sách icons để gán icon phù hợp
+            int iconIndex = getIconIndex(menuItems[i]);
+            String iconPath = (iconIndex >= 0 && iconIndex < icons.length) ? icons[iconIndex] : null;
+
+            menuButtons[i] = createMenuItem(menuItems[i], iconPath, menuItemColor, hoverColor);
+            menuButtons[i].setPreferredSize(new Dimension(260, 50));
             menuButtons[i].setMaximumSize(new Dimension(260, 50));
             menuButtons[i].setMinimumSize(new Dimension(260, 50));
-            menuButtons[i].setHorizontalAlignment(SwingConstants.LEFT); // Căn trái
+            menuButtons[i].setHorizontalAlignment(SwingConstants.LEFT);
             final String item = menuItems[i];
             menuButtons[i].addActionListener(e -> {
                 switchPanel(item);
@@ -156,16 +155,30 @@ public class Main extends JFrame {
         logoutPanel.setBorder(BorderFactory.createEmptyBorder(15, 20, 25, 20));
 
         JButton logoutBtn = createMenuItem("Đăng Xuất", "icon/log_out.svg", logoutColor, logoutColor.darker());
-        logoutBtn.setPreferredSize(new Dimension(260, 50)); // Kích thước cố định, đồng bộ với các nút khác
+        logoutBtn.setPreferredSize(new Dimension(260, 50));
         logoutBtn.setMaximumSize(new Dimension(260, 50));
         logoutBtn.setMinimumSize(new Dimension(260, 50));
-        logoutBtn.setHorizontalAlignment(SwingConstants.LEFT); // Căn trái
+        logoutBtn.setHorizontalAlignment(SwingConstants.LEFT);
         logoutBtn.addActionListener(e -> showLogoutConfirmation());
 
         logoutPanel.add(logoutBtn);
         sidebar.add(logoutPanel);
 
         return sidebar;
+    }
+
+    private int getIconIndex(String menuItem) {
+        String[] allMenuItems = {
+                "Dashboard", "Sản phẩm", "Phiếu nhập", "Phiếu xuất",
+                "Khách hàng", "Nhà cung cấp", "Nhân viên",
+                "Tài khoản", "Phân quyền"
+        };
+        for (int i = 0; i < allMenuItems.length; i++) {
+            if (allMenuItems[i].equals(menuItem)) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     private JButton createMenuItem(String text, String svgIconPath, Color textColor, Color hoverColor) {
@@ -192,7 +205,7 @@ public class Main extends JFrame {
 
         // Load SVG icon for the button
         if (svgIconPath != null) {
-            ImageIcon icon = IconUtils.loadSVGIcon(svgIconPath, 24, 24); // Tùy chỉnh kích thước icon
+            ImageIcon icon = IconUtils.loadSVGIcon(svgIconPath, 24, 24);
             button.setIcon(icon);
         }
 
@@ -254,10 +267,6 @@ public class Main extends JFrame {
             case "Phân quyền":
                 newPanel = new PhanQuyen();
                 break;
-            case "Ca làm":
-                newPanel = new CaLam();
-                break;
-            // Add other cases as needed
         }
 
         if (newPanel != null) {
@@ -303,5 +312,4 @@ public class Main extends JFrame {
             e.printStackTrace();
         }
     }
-
 }

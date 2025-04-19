@@ -1,15 +1,18 @@
 package View;
 
+import DTO.PXDTO;
+import Dao.DaoPhieuXuat;
+import Repository.PhieuXuatRepo;
+import View.Dialog.CreaterPhieuXuat;
 import Gui.InputDate;
 import Gui.MainFunction;
-import com.formdev.flatlaf.FlatLightLaf;
 import java.awt.*;
 import java.text.DecimalFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
 import javax.swing.*;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
@@ -25,8 +28,10 @@ public class PhieuXuat extends JPanel {
     private DefaultTableModel tableModel;
     private InputDate dateStart, dateEnd;
     private Color backgroundColor = new Color(255, 255, 255);
+    private List<PXDTO> exportEntries;
 
     public PhieuXuat() {
+        exportEntries = new ArrayList<>();
         setLayout(new BorderLayout(0, 8));
         setBackground(backgroundColor);
 
@@ -35,7 +40,7 @@ public class PhieuXuat extends JPanel {
         topPanel.setBackground(backgroundColor);
         topPanel.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
 
-        functionBar = new MainFunction("phieuxuat", new String[]{"create", "detail", "cancel", "export"});
+        functionBar = new MainFunction("phieuxuat", new String[]{"create", "detail", "cancel", "sucess", "export"});
         topPanel.add(functionBar, BorderLayout.WEST);
 
         JPanel searchPanel = createSearchPanel();
@@ -69,7 +74,11 @@ public class PhieuXuat extends JPanel {
                 JOptionPane.showMessageDialog(this, "Vui lòng chọn một phiếu xuất để xem chi tiết!", "Cảnh báo", JOptionPane.WARNING_MESSAGE);
                 return;
             }
-            JOptionPane.showMessageDialog(this, "Chức năng xem chi tiết chưa được triển khai!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+
+            // Lấy thông tin từ hàng được chọn
+            PXDTO entry = exportEntries.get(selectedRow);
+            // TODO: Cần cập nhật dialog ChiTietXuat để hiển thị thông tin từ PXDTO
+            JOptionPane.showMessageDialog(this, "Chức năng xem chi tiết chưa được cập nhật!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
         });
 
         // Nút "Hủy" (cancel)
@@ -79,7 +88,19 @@ public class PhieuXuat extends JPanel {
                 JOptionPane.showMessageDialog(this, "Vui lòng chọn một phiếu xuất để hủy!", "Cảnh báo", JOptionPane.WARNING_MESSAGE);
                 return;
             }
-            table.setValueAt("Hủy", selectedRow, 6); // Cập nhật trạng thái thành "Hủy"
+            table.setValueAt("Hủy", selectedRow, 6);
+            exportEntries.get(selectedRow).setTrangThai("Hủy");
+        });
+
+        // Nút "Duyệt" (sucess)
+        functionBar.setButtonActionListener("sucess", () -> {
+            int selectedRow = table.getSelectedRow();
+            if (selectedRow == -1) {
+                JOptionPane.showMessageDialog(this, "Vui lòng chọn một phiếu xuất để duyệt!", "Cảnh báo", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            table.setValueAt("Đã Duyệt", selectedRow, 6);
+            exportEntries.get(selectedRow).setTrangThai("Đã Duyệt");
         });
 
         // Nút "Xuất" (export)
@@ -92,7 +113,7 @@ public class PhieuXuat extends JPanel {
         JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 0));
         searchPanel.setBackground(backgroundColor);
 
-        cbbFilter = new JComboBox<>(new String[]{"Tất cả", "Khách hàng", "Địa chỉ", "Email"});
+        cbbFilter = new JComboBox<>(new String[]{"Tất cả", "Mã phiếu xuất", "Khách hàng", "Nhân viên"});
         cbbFilter.setPreferredSize(new Dimension(100, 25));
 
         txtSearch = new JTextField();
@@ -118,22 +139,7 @@ public class PhieuXuat extends JPanel {
             table.setRowSorter(null);
         });
 
-        txtSearch.getDocument().addDocumentListener(new DocumentListener() {
-            @Override
-            public void insertUpdate(DocumentEvent e) {
-                filterData();
-            }
 
-            @Override
-            public void removeUpdate(DocumentEvent e) {
-                filterData();
-            }
-
-            @Override
-            public void changedUpdate(DocumentEvent e) {
-                filterData();
-            }
-        });
 
         return searchPanel;
     }
@@ -151,7 +157,7 @@ public class PhieuXuat extends JPanel {
         gbc.gridy = 0;
         gbc.anchor = GridBagConstraints.WEST;
 
-        JLabel lblTitle = new JLabel("Khách Hàng");
+        JLabel lblTitle = new JLabel("Bộ lọc");
         lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 16));
         leftPanel.add(lblTitle, gbc);
 
@@ -173,12 +179,10 @@ public class PhieuXuat extends JPanel {
         cbbEmployee.setPreferredSize(new Dimension(200, 35));
         leftPanel.add(cbbEmployee, gbc);
 
-        // --- TỪ NGÀY ---
         gbc.gridy++;
         dateStart = new InputDate("Từ ngày", 200, 70);
         leftPanel.add(dateStart, gbc);
 
-        // --- ĐẾN NGÀY ---
         gbc.gridy++;
         dateEnd = new InputDate("Đến ngày", 200, 70);
         leftPanel.add(dateEnd, gbc);
@@ -204,32 +208,66 @@ public class PhieuXuat extends JPanel {
         return leftPanel;
     }
 
-    private JScrollPane createTable() {
-        String[] columns = {"STT", "Mã phiếu xuất", "Khách hàng", "Nhân viên xuất", "Thời gian", "Tổng tiền", "Trạng thái"};
-        Object[][] data = {
-            {1, "PX001", "Nguyễn Văn A", "Trần Thị B", "2025-04-14 08:00", "10.000.000", "Đã duyệt"},
-            {2, "PX002", "Lê Văn C", "Phạm Văn D", "2025-04-13 14:30", "6.000.000", "Chưa duyệt"},
-            {3, "PX003", "Trần Thị E", "Ngô Văn F", "2025-04-12 10:15", "12.500.000", "Đã duyệt"}
-        };
+    private void loadTableData(DefaultTableModel model) {
+        try {
+            PhieuXuatRepo repo = new DaoPhieuXuat();
+            List<PXDTO> danhSach = repo.layDanhSachPhieuXuat();
+            exportEntries.clear();
+            exportEntries.addAll(danhSach);
 
-        tableModel = new DefaultTableModel(data, columns) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return false;
+            model.setRowCount(0); // Xóa dữ liệu cũ
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+            DecimalFormat df = new DecimalFormat("#,###");
+
+            for (PXDTO px : danhSach) {
+                model.addRow(new Object[]{
+                        px.getSTT(),
+                        px.getMaPX(),
+                        px.getMaKhachHang(),
+                        px.getMaNhanVien(),
+                        px.getThoiGian().format(formatter),
+                        df.format(px.getTongTien()),
+                        px.getTrangThai()
+                });
             }
-        };
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, "Lỗi khi tải dữ liệu: " + e.getMessage());
+        }
+    }
 
-        table = new JTable(tableModel);
+    private void customizeTableAppearance() {
         table.setRowHeight(35);
         table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 16));
         table.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         table.setGridColor(new Color(200, 200, 200));
         table.setShowGrid(false);
         table.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
+    }
 
-        JScrollPane scrollPane = new JScrollPane(table);
-        scrollPane.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
-        return scrollPane;
+    private JScrollPane createTable() {
+        // Panel chứa table
+        JPanel tablePanel = new JPanel(new BorderLayout());
+        tablePanel.setBackground(backgroundColor);
+        tablePanel.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
+
+        // Columns
+        String[] columns = {"STT", "Mã phiếu xuất", "Khách hàng", "Nhân viên xuất", "Thời gian", "Tổng tiền", "Trạng thái"};
+
+        // Tạo model với 0 row ban đầu
+        tableModel = new DefaultTableModel(columns, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+
+        // Tạo table với model
+        table = new JTable(tableModel);
+        customizeTableAppearance();
+
+        loadTableData(tableModel);
+
+        return new JScrollPane(table);
     }
 
     private void filterData() {
@@ -245,17 +283,13 @@ public class PhieuXuat extends JPanel {
 
         int[] columnIndices;
         if ("Tất cả".equals(selectedFilter)) {
-            columnIndices = new int[]{0, 1, 2, 3, 4}; // STT, Mã phiếu xuất, Khách hàng, Nhân viên xuất, Thời gian
+            columnIndices = new int[]{0, 1, 2, 3, 4};
         } else {
             int columnIndex = switch (selectedFilter) {
-                case "Khách hàng" ->
-                    2; // Cột "Khách hàng"
-                case "Địa chỉ" ->
-                    2;    // Không có cột "Địa chỉ", tạm ánh xạ đến "Khách hàng"
-                case "Email" ->
-                    2;      // Không có cột "Email", tạm ánh xạ đến "Khách hàng"
-                default ->
-                    0;
+                case "Mã phiếu xuất" -> 1;
+                case "Khách hàng" -> 2;
+                case "Nhân viên" -> 3;
+                default -> 0;
             };
             columnIndices = new int[]{columnIndex};
         }
@@ -265,15 +299,37 @@ public class PhieuXuat extends JPanel {
     }
 
     private void loadData() {
+        loadTableData(tableModel);
         System.out.println("Dữ liệu đã được làm mới.");
     }
 
-    // Phương thức để thêm phiếu xuất mới vào bảng dữ liệu ảo
-    public void addPhieuXuat(String receiptId, String customer, String employee, long totalAmount) {
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm");
-        String currentDate = sdf.format(new Date());
+    public void addPhieuXuat(String maPX, String maKhachHang, String maNhanVien, float tongTien) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+        LocalDateTime currentDate = LocalDateTime.now();
         DecimalFormat df = new DecimalFormat("#,###");
         int stt = table.getRowCount() + 1;
-        tableModel.addRow(new Object[]{stt, receiptId, customer, employee, currentDate, df.format(totalAmount) + "đ", "Chưa duyệt"});
+
+        // Tạo một PXDTO mới
+        PXDTO entry = new PXDTO(
+                stt,
+                maPX,
+                maKhachHang,
+                maNhanVien,
+                currentDate,
+                tongTien,
+                "Chưa duyệt"
+        );
+
+        // Thêm vào danh sách và bảng
+        exportEntries.add(entry);
+        tableModel.addRow(new Object[]{
+                entry.getSTT(),
+                entry.getMaPX(),
+                entry.getMaKhachHang(),
+                entry.getMaNhanVien(),
+                entry.getThoiGian().format(formatter),
+                df.format(entry.getTongTien()),
+                entry.getTrangThai()
+        });
     }
 }

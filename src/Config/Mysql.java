@@ -22,9 +22,10 @@ public class Mysql {
             Class.forName("com.mysql.cj.jdbc.Driver");
 
             // Các thông số kết nối
-            String url = "jdbc:mysql://localhost:3306/quanlycuahang2?serverTimezone=UTC";
-            String userName = "root";
-            String password = "";
+            String url = "jdbc:mysql://localhost:3306/quanlycuahang2?useSSL=false&allowPublicKeyRetrieval=true";
+            String userName = "springstudent";
+            String password = "springstudent";
+
             //Tao ket noi 
             c = DriverManager.getConnection(url, userName, password);
         } catch (Exception e) {

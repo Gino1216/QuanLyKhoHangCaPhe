@@ -1,7 +1,8 @@
 package View;
 
 import DTO.Account;
-import Dao.DaoUse;
+import Dao.DaoAccount;
+
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -40,17 +41,16 @@ public class LoginMain {
         paddingPanel.setLayout(new GridBagLayout());
 
         // Create the form content
-        // Create the form content
         JPanel contentPanel = new JPanel();
         contentPanel.setLayout(new GridBagLayout());
         contentPanel.setOpaque(false);
         contentPanel.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(new Color(255, 255, 255, 100)),
-                new EmptyBorder(50, 50, 30, 30) // Correct syntax for EmptyBorder
+                new EmptyBorder(50, 50, 30, 30)
         ));
 
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(10, 10, 10, 10);  // Correct syntax for Insets
+        gbc.insets = new Insets(10, 10, 10, 10);
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.anchor = GridBagConstraints.CENTER;
 
@@ -87,6 +87,7 @@ public class LoginMain {
         userText.setOpaque(false);
         userText.setForeground(Color.WHITE);
         userText.setCaretColor(Color.WHITE);
+        gbc.gridwidth = 1;
         gbc.gridx = 1;
         contentPanel.add(userText, gbc);
 
@@ -122,44 +123,47 @@ public class LoginMain {
 
         // Button hover effects
         loginButton.addMouseListener(new MouseAdapter() {
+            @Override
             public void mouseEntered(MouseEvent e) {
                 loginButton.setBackground(new Color(230, 230, 230));
             }
 
+            @Override
             public void mouseExited(MouseEvent e) {
                 loginButton.setBackground(Color.WHITE);
             }
 
+            @Override
             public void mouseClicked(MouseEvent e) {
                 // Lấy thông tin từ các trường nhập liệu
-                String username = userText.getText();
+                String username = userText.getText().trim();
                 char[] password = passField.getPassword();
-
-                // Biến checkLogin dùng để kiểm tra trạng thái đăng nhập
-                boolean checkLogin = false;
-                Account loggedInAccount = null; // To store the logged-in account information
 
                 // Kiểm tra nếu username hoặc password trống
                 if (username.isEmpty() || password.length == 0) {
-                    JOptionPane.showMessageDialog(frame, "Please enter both username and password!", "Error", JOptionPane.ERROR_MESSAGE);
-                } else {
-                    // Sử dụng phương thức checkLogin từ DaoUse để kiểm tra tài khoản và mật khẩu
-                    loggedInAccount = DaoUse.checkLogin(username, String.valueOf(password));
-
-                    // Nếu đăng nhập không thành công
-                    if (loggedInAccount == null) {
-                        JOptionPane.showMessageDialog(frame, "Invalid username or password!", "Error", JOptionPane.ERROR_MESSAGE);
-                    } else {
-                        checkLogin = true;
-                    }
+                    JOptionPane.showMessageDialog(frame, "Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                    return;
                 }
 
-                // Nếu đăng nhập thành công, thay đổi giao diện
-                if (checkLogin) {
-                    frame.dispose();
+                DaoAccount daoAccount =new DaoAccount();
+                // Xác thực tài khoản
+                Account loggedInAccount = daoAccount.checkLogin(username, String.valueOf(password));
 
-                    new Main(loggedInAccount); // Mở cửa sổ chính với tài khoản đã đăng nhập
+                if (loggedInAccount == null) {
+                    JOptionPane.showMessageDialog(frame, "Tên đăng nhập hoặc mật khẩu không đúng!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                    return;
                 }
+
+                // Kiểm tra mã vai trò
+                int role = loggedInAccount.getRole();
+                if (role < 1 || role > 3) { // Chỉ cho phép vai trò 1, 2, 3
+                    JOptionPane.showMessageDialog(frame, "Vai trò không hợp lệ! Vui lòng liên hệ quản trị viên.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                // Đăng nhập thành công, mở cửa sổ chính
+                frame.dispose();
+                new Main(loggedInAccount);
             }
         });
 
@@ -167,7 +171,6 @@ public class LoginMain {
         gbc.gridy = 4;
         gbc.gridwidth = 2;
         gbc.insets = new Insets(20, 10, 10, 10);
-
         contentPanel.add(loginButton, gbc);
 
         // Add content panel to padding panel
@@ -177,20 +180,14 @@ public class LoginMain {
         mainPanel.add(paddingPanel, BorderLayout.CENTER);
 
         // Add footer
-        JLabel footerLabel = new JLabel("© 2023 ");
-
-        footerLabel.setFont(
-                new Font("Segoe UI", Font.PLAIN, 10));
-        footerLabel.setForeground(
-                new Color(200, 200, 200));
+        JLabel footerLabel = new JLabel("© 2023");
+        footerLabel.setFont(new Font("Segoe UI", Font.PLAIN, 10));
+        footerLabel.setForeground(new Color(200, 200, 200));
         footerLabel.setHorizontalAlignment(SwingConstants.CENTER);
-
         mainPanel.add(footerLabel, BorderLayout.SOUTH);
 
         // Add main panel to frame
         frame.add(mainPanel);
-
-        frame.setVisible(
-                true);
+        frame.setVisible(true);
     }
 }

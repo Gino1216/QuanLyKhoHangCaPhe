@@ -1,6 +1,17 @@
 package View;
 
+import DTO.NhaCungCapDTO;
+import DTO.NhanVienDTO;
+import DTO.SanPhamDTO;
+import Dao.DaoNCC;
+import Dao.DaoNV;
+import Dao.DaoSP;
 import Gui.MainFunction;
+import Repository.NCCRepo;
+import Repository.NhanVienRepo;
+import Repository.SanPhamRepo;
+import View.Dialog.ChiTietNhanVien;
+import View.Dialog.ChiTietSanPham;
 import com.formdev.flatlaf.FlatLightLaf;
 
 import javax.swing.*;
@@ -11,8 +22,11 @@ import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import javax.swing.border.EmptyBorder;
+import java.awt.event.KeyEvent;
 import java.text.SimpleDateFormat;
 import java.text.ParseException;
+import java.util.Date;
+import java.util.List;
 
 public class NhanVien extends JPanel {
 
@@ -62,6 +76,10 @@ public class NhanVien extends JPanel {
         // Button actions for toolbar
         functionBar.setButtonActionListener("create", this::showAddEmployeeDialog);
         functionBar.setButtonActionListener("update", this::showEditEmployeeDialog);
+        functionBar.setButtonActionListener("delete", this::DeleteEmploy);
+        functionBar.setButtonActionListener("detail", this::showEmployeeDetails);
+
+
 
         return topPanel;
     }
@@ -90,16 +108,19 @@ public class NhanVien extends JPanel {
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
         // Labels and fields
-        String[] labels = {"Họ tên", "Giới tính", "Ngày sinh", "Số điện thoại", "Email"};
-        JTextField[] textFields = new JTextField[labels.length];
-        JComboBox<String> cbbGender = null;
+        String[] labels = {"Mã Nhân Viên", "Họ Tên", "Giới Tính", "Ngày Sinh", "Địa Chỉ", "Email", "Số Điện Thoại", "Chức Vụ"};
+        JTextField[] textFields = new JTextField[6]; // 6 fields: Mã NV, Họ Tên, Ngày Sinh, Địa Chỉ, Email, Số ĐT
+        JComboBox<String>[] comboBoxes = new JComboBox[2]; // 2 fields: Giới Tính, Chức Vụ
 
+        int textFieldIndex = 0;
+        int comboBoxIndex = 0;
         int row = 0;
+
         for (int i = 0; i < labels.length; i++) {
             gbc.gridwidth = 1;
             gbc.anchor = GridBagConstraints.WEST;
 
-            // Nhãn
+            // Label
             JLabel label = new JLabel(labels[i]);
             label.setForeground(Color.BLACK);
             label.setFont(new Font("Segoe UI", Font.PLAIN, 16));
@@ -107,23 +128,33 @@ public class NhanVien extends JPanel {
             gbc.gridy = row;
             formPanel.add(label, gbc);
 
-            // Trường nhập liệu
-            if (labels[i].equals("Giới tính")) {
-                cbbGender = new JComboBox<>(new String[]{"Nam", "Nữ"});
-                cbbGender.setFont(new Font("Segoe UI", Font.PLAIN, 16));
-                cbbGender.setPreferredSize(new Dimension(200, 40));
+            // Input field
+            if (labels[i].equals("Giới Tính")) {
+                comboBoxes[comboBoxIndex] = new JComboBox<>(new String[]{"Nam", "Nữ"});
+                comboBoxes[comboBoxIndex].setFont(new Font("Segoe UI", Font.PLAIN, 16));
+                comboBoxes[comboBoxIndex].setPreferredSize(new Dimension(200, 40));
                 gbc.gridx = i % 2 == 0 ? 1 : 3;
                 gbc.gridy = row;
-                formPanel.add(cbbGender, gbc);
+                formPanel.add(comboBoxes[comboBoxIndex], gbc);
+                comboBoxIndex++;
+            } else if (labels[i].equals("Chức Vụ")) {
+                comboBoxes[comboBoxIndex] = new JComboBox<>(new String[]{"Quản Lý", "Nhân Viên", "Kế Toán"});
+                comboBoxes[comboBoxIndex].setFont(new Font("Segoe UI", Font.PLAIN, 16));
+                comboBoxes[comboBoxIndex].setPreferredSize(new Dimension(200, 40));
+                gbc.gridx = i % 2 == 0 ? 1 : 3;
+                gbc.gridy = row;
+                formPanel.add(comboBoxes[comboBoxIndex], gbc);
+                comboBoxIndex++;
             } else {
-                textFields[i] = new JTextField(15);
-                textFields[i].setFont(new Font("Segoe UI", Font.PLAIN, 16));
-                textFields[i].setPreferredSize(new Dimension(200, 40));
-                
-                if (labels[i].equals("Số điện thoại")) {
-                    textFields[i].setText("Nhập số điện thoại (10 chữ số)");
-                    textFields[i].setForeground(Color.GRAY);
-                    textFields[i].addFocusListener(new java.awt.event.FocusAdapter() {
+                textFields[textFieldIndex] = new JTextField(15);
+                textFields[textFieldIndex].setFont(new Font("Segoe UI", Font.PLAIN, 16));
+                textFields[textFieldIndex].setPreferredSize(new Dimension(200, 40));
+
+                // Placeholder for Số Điện Thoại
+                if (labels[i].equals("Số Điện Thoại")) {
+                    textFields[textFieldIndex].setText("Nhập số điện thoại (10 chữ số)");
+                    textFields[textFieldIndex].setForeground(Color.GRAY);
+                    textFields[textFieldIndex].addFocusListener(new java.awt.event.FocusAdapter() {
                         @Override
                         public void focusGained(java.awt.event.FocusEvent evt) {
                             JTextField textField = (JTextField) evt.getSource();
@@ -142,10 +173,12 @@ public class NhanVien extends JPanel {
                             }
                         }
                     });
-                } else if (labels[i].equals("Email")) {
-                    textFields[i].setText("Nhập email (tùy chọn)");
-                    textFields[i].setForeground(Color.GRAY);
-                    textFields[i].addFocusListener(new java.awt.event.FocusAdapter() {
+                }
+                // Placeholder for Email
+                else if (labels[i].equals("Email")) {
+                    textFields[textFieldIndex].setText("Nhập email (tùy chọn)");
+                    textFields[textFieldIndex].setForeground(Color.GRAY);
+                    textFields[textFieldIndex].addFocusListener(new java.awt.event.FocusAdapter() {
                         @Override
                         public void focusGained(java.awt.event.FocusEvent evt) {
                             JTextField textField = (JTextField) evt.getSource();
@@ -164,10 +197,12 @@ public class NhanVien extends JPanel {
                             }
                         }
                     });
-                } else if (labels[i].equals("Ngày sinh")) {
-                    textFields[i].setText("dd/MM/yyyy");
-                    textFields[i].setForeground(Color.GRAY);
-                    textFields[i].addFocusListener(new java.awt.event.FocusAdapter() {
+                }
+                // Placeholder for Ngày Sinh
+                else if (labels[i].equals("Ngày Sinh")) {
+                    textFields[textFieldIndex].setText("dd/MM/yyyy");
+                    textFields[textFieldIndex].setForeground(Color.GRAY);
+                    textFields[textFieldIndex].addFocusListener(new java.awt.event.FocusAdapter() {
                         @Override
                         public void focusGained(java.awt.event.FocusEvent evt) {
                             JTextField textField = (JTextField) evt.getSource();
@@ -187,9 +222,11 @@ public class NhanVien extends JPanel {
                         }
                     });
                 }
+
                 gbc.gridx = i % 2 == 0 ? 1 : 3;
                 gbc.gridy = row;
-                formPanel.add(textFields[i], gbc);
+                formPanel.add(textFields[textFieldIndex], gbc);
+                textFieldIndex++;
             }
 
             if (i % 2 == 1) {
@@ -197,15 +234,12 @@ public class NhanVien extends JPanel {
             }
         }
 
-        // Để sử dụng trong ActionListener
-        final JComboBox<String> finalCbbGender = cbbGender;
-
         dialog.add(formPanel, BorderLayout.CENTER);
 
         // Buttons panel
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 15));
         buttonPanel.setBackground(new Color(173, 216, 230));
-        JButton btnAdd = new JButton("Thêm nhân viên");
+        JButton btnAdd = new JButton("Thêm Nhân Viên");
         btnAdd.setBackground(new Color(59, 130, 246));
         btnAdd.setForeground(Color.WHITE);
         btnAdd.setFont(new Font("Segoe UI", Font.BOLD, 16));
@@ -220,37 +254,33 @@ public class NhanVien extends JPanel {
         btnCancel.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
 
         btnAdd.addActionListener(e -> {
-            String name = textFields[0].getText();
-            String birthDate = textFields[2].getText();
-            String phone = textFields[3].getText();
-            String email = textFields[4].getText();
-            String gender = (String) finalCbbGender.getSelectedItem();
+            // Lấy giá trị từ các trường
+            String maNV = textFields[0].getText().trim(); // Mã Nhân Viên
+            String hoTen = textFields[1].getText().trim(); // Họ Tên
+            String ngaySinh = textFields[2].getText().trim(); // Ngày Sinh
+            String diaChi = textFields[3].getText().trim(); // Địa Chỉ
+            String soDT = textFields[5].getText().trim(); // Số Điện Thoại
+            String email = textFields[4].getText().trim(); // Email
+            String gioiTinh = (String) comboBoxes[0].getSelectedItem(); // Giới Tính
+            String chucVu = (String) comboBoxes[1].getSelectedItem(); // Chức Vụ
 
-            // Kiểm tra định dạng ngày sinh
-            SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
-            dateFormat.setLenient(false);
-            try {
-                if (!birthDate.equals("dd/MM/yyyy")) {
-                    dateFormat.parse(birthDate);
-                } else {
-                    birthDate = "";
-                }
-            } catch (ParseException ex) {
-                JOptionPane.showMessageDialog(dialog, "Ngày sinh phải có định dạng dd/MM/yyyy!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+            // Kiểm tra các trường bắt buộc
+            if (maNV.isEmpty() || hoTen.isEmpty() || soDT.isEmpty() || diaChi.isEmpty() || ngaySinh.isEmpty() || soDT.isEmpty()) {
+                JOptionPane.showMessageDialog(dialog, "Vui lòng điền đầy đủ thông tin bắt buộc!", "Lỗi", JOptionPane.ERROR_MESSAGE);
                 return;
             }
 
-            // Kiểm tra định dạng số điện thoại
-            if (!phone.equals("Nhập số điện thoại (10 chữ số)")) {
-                if (!phone.matches("\\d{10}")) {
+            // Kiểm tra số điện thoại
+            if (!soDT.equals("Nhập số điện thoại (10 chữ số)")) {
+                if (!soDT.matches("\\d{10}")) {
                     JOptionPane.showMessageDialog(dialog, "Số điện thoại phải có 10 chữ số!", "Lỗi", JOptionPane.ERROR_MESSAGE);
                     return;
                 }
             } else {
-                phone = "";
+                soDT = "";
             }
 
-            // Kiểm tra định dạng email (nếu có)
+            // Kiểm tra email
             if (!email.equals("Nhập email (tùy chọn)")) {
                 if (!email.matches("^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$")) {
                     JOptionPane.showMessageDialog(dialog, "Email không hợp lệ!", "Lỗi", JOptionPane.ERROR_MESSAGE);
@@ -260,17 +290,72 @@ public class NhanVien extends JPanel {
                 email = "";
             }
 
-            // Kiểm tra các trường bắt buộc
-            if (name.isEmpty() || birthDate.isEmpty() || phone.isEmpty()) {
-                JOptionPane.showMessageDialog(dialog, "Vui lòng điền đầy đủ các trường bắt buộc!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+            // Kiểm tra ngày sinh
+            if (ngaySinh.equals("dd/MM/yyyy") || ngaySinh.isEmpty()) {
+                JOptionPane.showMessageDialog(dialog, "Vui lòng nhập ngày sinh!", "Lỗi", JOptionPane.ERROR_MESSAGE);
                 return;
+            } else {
+                try {
+                    SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+                    sdf.setLenient(false); // Không cho phép ngày không hợp lệ
+                    Date birthDate = sdf.parse(ngaySinh);
+                    Date currentDate = new Date();
+                    if (birthDate.after(currentDate)) {
+                        JOptionPane.showMessageDialog(dialog, "Ngày sinh không được trong tương lai!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+                    // Định dạng lại ngày sinh về yyyy-MM-dd để lưu vào cơ sở dữ liệu
+                    ngaySinh = new SimpleDateFormat("yyyy-MM-dd").format(birthDate);
+                } catch (ParseException ex) {
+                    JOptionPane.showMessageDialog(dialog, "Ngày sinh phải có định dạng dd/MM/yyyy và hợp lệ!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
             }
 
-            // Thêm vào bảng với mã NV tự động tăng
-            DefaultTableModel model = (DefaultTableModel) table.getModel();
-            int newId = table.getRowCount() + 1;
-            model.addRow(new Object[]{newId, name, gender, birthDate, phone, email});
-            dialog.dispose();
+            // Tạo đối tượng NhanVienDTO
+            NhanVienDTO nv = new NhanVienDTO();
+            nv.setMaNV(maNV);
+            nv.setHoTen(hoTen);
+            nv.setGioiTinh(gioiTinh);
+            nv.setNgaySinh(ngaySinh);
+            nv.setDiaChi(diaChi);
+            nv.setEmail(email);
+            nv.setSoDT(soDT);
+            nv.setChucVu(chucVu);
+
+            // Thêm vào cơ sở dữ liệu
+            try {
+                DaoNV daoNhanVien = new DaoNV();
+                if (daoNhanVien.kiemTraMaNVTonTai(maNV)) {
+                    JOptionPane.showMessageDialog(dialog,
+                            "Mã nhân viên đã tồn tại! Vui lòng nhập mã khác.",
+                            "Trùng mã nhân viên",
+                            JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+
+                daoNhanVien.themNhanVien(nv);
+
+                // Cập nhật bảng hiển thị
+                DefaultTableModel model = (DefaultTableModel) table.getModel();
+                model.addRow(new Object[]{
+                        nv.getMaNV(),
+                        nv.getHoTen(),
+                        nv.getGioiTinh(),
+                        nv.getNgaySinh(),
+                        nv.getDiaChi(),
+                        nv.getEmail(),
+                        nv.getSoDT(),
+                        nv.getChucVu()
+                });
+
+                JOptionPane.showMessageDialog(dialog, "Thêm nhân viên thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
+                dialog.dispose();
+
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(dialog, "Lỗi khi thêm nhân viên: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+                ex.printStackTrace();
+            }
         });
 
         btnCancel.addActionListener(e -> dialog.dispose());
@@ -279,8 +364,15 @@ public class NhanVien extends JPanel {
         buttonPanel.add(btnCancel);
         dialog.add(buttonPanel, BorderLayout.SOUTH);
 
+        // Phím tắt
+        dialog.getRootPane().setDefaultButton(btnAdd); // Enter để thêm
+        dialog.getRootPane().registerKeyboardAction(e -> dialog.dispose(),
+                KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0),
+                JComponent.WHEN_IN_FOCUSED_WINDOW); // Esc để hủy
+
         dialog.setVisible(true);
     }
+
 
     private void showEditEmployeeDialog() {
         int selectedRow = table.getSelectedRow();
@@ -290,12 +382,14 @@ public class NhanVien extends JPanel {
         }
 
         int modelRow = table.convertRowIndexToModel(selectedRow);
-        String id = table.getValueAt(modelRow, 0).toString();
-        String name = table.getValueAt(modelRow, 1).toString();
-        String gender = table.getValueAt(modelRow, 2).toString();
-        String birthDate = table.getValueAt(modelRow, 3).toString();
-        String phone = table.getValueAt(modelRow, 4).toString();
-        String email = table.getValueAt(modelRow, 5).toString();
+        String maNV = table.getValueAt(modelRow, 0).toString(); // Mã NV
+        String hoTen = table.getValueAt(modelRow, 1).toString(); // Họ Tên
+        String gioiTinh = table.getValueAt(modelRow, 2).toString(); // Giới Tính
+        String ngaySinh = table.getValueAt(modelRow, 3).toString(); // Ngày Sinh
+        String diaChi = table.getValueAt(modelRow, 4).toString(); // Địa Chỉ
+        String email = table.getValueAt(modelRow, 5).toString(); // Email
+        String soDT = table.getValueAt(modelRow, 6).toString(); // Số Điện Thoại
+        String chucVu = table.getValueAt(modelRow, 7).toString(); // Chức Vụ
 
         JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Chỉnh Sửa Nhân Viên", true);
         dialog.setSize(900, 700);
@@ -314,22 +408,25 @@ public class NhanVien extends JPanel {
         // Form panel
         JPanel formPanel = new JPanel(new GridBagLayout());
         formPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
-        formPanel.setBackground(new Color(255, 255, 255, 255));
+        formPanel.setBackground(new Color(255, 255, 255));
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(10, 10, 10, 10);
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
         // Labels and fields
-        String[] labels = {"Mã nhân viên", "Họ tên", "Giới tính", "Ngày sinh", "Số điện thoại", "Email"};
-        JTextField[] textFields = new JTextField[labels.length];
-        JComboBox<String> cbbGender = null;
+        String[] labels = {"Mã Nhân Viên", "Họ Tên", "Giới Tính", "Ngày Sinh", "Địa Chỉ", "Email", "Số Điện Thoại", "Chức Vụ"};
+        JTextField[] textFields = new JTextField[6]; // For Mã NV, Họ Tên, Ngày Sinh, Địa Chỉ, Email, Số ĐT
+        JComboBox<String>[] comboBoxes = new JComboBox[2]; // For Giới Tính, Chức Vụ
 
+        int textFieldIndex = 0;
+        int comboBoxIndex = 0;
         int row = 0;
+
         for (int i = 0; i < labels.length; i++) {
             gbc.gridwidth = 1;
             gbc.anchor = GridBagConstraints.WEST;
 
-            // Nhãn
+            // Label
             JLabel label = new JLabel(labels[i]);
             label.setForeground(Color.BLACK);
             label.setFont(new Font("Segoe UI", Font.PLAIN, 16));
@@ -337,99 +434,59 @@ public class NhanVien extends JPanel {
             gbc.gridy = row;
             formPanel.add(label, gbc);
 
-            // Trường nhập liệu
-            if (labels[i].equals("Giới tính")) {
-                cbbGender = new JComboBox<>(new String[]{"Nam", "Nữ"});
-                cbbGender.setFont(new Font("Segoe UI", Font.PLAIN, 16));
-                cbbGender.setPreferredSize(new Dimension(200, 40));
-                cbbGender.setSelectedItem(gender);
+            // Input field or combobox
+            if (labels[i].equals("Giới Tính")) {
+                comboBoxes[comboBoxIndex] = new JComboBox<>(new String[]{"Nam", "Nữ"});
+                comboBoxes[comboBoxIndex].setFont(new Font("Segoe UI", Font.PLAIN, 16));
+                comboBoxes[comboBoxIndex].setPreferredSize(new Dimension(200, 40));
+                comboBoxes[comboBoxIndex].setSelectedItem(gioiTinh);
                 gbc.gridx = i % 2 == 0 ? 1 : 3;
                 gbc.gridy = row;
-                formPanel.add(cbbGender, gbc);
+                formPanel.add(comboBoxes[comboBoxIndex], gbc);
+                comboBoxIndex++;
+            } else if (labels[i].equals("Chức Vụ")) {
+                comboBoxes[comboBoxIndex] = new JComboBox<>(new String[]{"Quản Lý", "Nhân Viên", "Kế Toán"});
+                comboBoxes[comboBoxIndex].setFont(new Font("Segoe UI", Font.PLAIN, 16));
+                comboBoxes[comboBoxIndex].setPreferredSize(new Dimension(200, 40));
+                comboBoxes[comboBoxIndex].setSelectedItem(chucVu);
+                gbc.gridx = i % 2 == 0 ? 1 : 3;
+                gbc.gridy = row;
+                formPanel.add(comboBoxes[comboBoxIndex], gbc);
+                comboBoxIndex++;
             } else {
-                textFields[i] = new JTextField(15);
-                textFields[i].setFont(new Font("Segoe UI", Font.PLAIN, 16));
-                textFields[i].setPreferredSize(new Dimension(200, 40));
-                
-                if (labels[i].equals("Mã nhân viên")) {
-                    textFields[i].setText(id);
-                    textFields[i].setEditable(false);
-                } else if (labels[i].equals("Số điện thoại")) {
-                    textFields[i].setText(phone);
-                    textFields[i].setForeground(Color.BLACK);
-                    textFields[i].addFocusListener(new java.awt.event.FocusAdapter() {
-                        @Override
-                        public void focusGained(java.awt.event.FocusEvent evt) {
-                            JTextField textField = (JTextField) evt.getSource();
-                            if (textField.getText().equals("Nhập số điện thoại (10 chữ số)")) {
-                                textField.setText("");
-                                textField.setForeground(Color.BLACK);
-                            }
-                        }
+                textFields[textFieldIndex] = new JTextField(15);
+                textFields[textFieldIndex].setFont(new Font("Segoe UI", Font.PLAIN, 16));
+                textFields[textFieldIndex].setPreferredSize(new Dimension(200, 40));
+                if (labels[i].equals("Mã Nhân Viên")) {
+                    textFields[textFieldIndex].setEditable(false);
+                    textFields[textFieldIndex].setBackground(new Color(240, 240, 240));
+                }
 
-                        @Override
-                        public void focusLost(java.awt.event.FocusEvent evt) {
-                            JTextField textField = (JTextField) evt.getSource();
-                            if (textField.getText().isEmpty()) {
-                                textField.setText("Nhập số điện thoại (10 chữ số)");
-                                textField.setForeground(Color.GRAY);
-                            }
-                        }
-                    });
-                } else if (labels[i].equals("Email")) {
-                    textFields[i].setText(email.isEmpty() ? "Nhập email (tùy chọn)" : email);
-                    textFields[i].setForeground(email.isEmpty() ? Color.GRAY : Color.BLACK);
-                    textFields[i].addFocusListener(new java.awt.event.FocusAdapter() {
-                        @Override
-                        public void focusGained(java.awt.event.FocusEvent evt) {
-                            JTextField textField = (JTextField) evt.getSource();
-                            if (textField.getText().equals("Nhập email (tùy chọn)")) {
-                                textField.setText("");
-                                textField.setForeground(Color.BLACK);
-                            }
-                        }
-
-                        @Override
-                        public void focusLost(java.awt.event.FocusEvent evt) {
-                            JTextField textField = (JTextField) evt.getSource();
-                            if (textField.getText().isEmpty()) {
-                                textField.setText("Nhập email (tùy chọn)");
-                                textField.setForeground(Color.GRAY);
-                            }
-                        }
-                    });
-                } else if (labels[i].equals("Ngày sinh")) {
-                    textFields[i].setText(birthDate);
-                    textFields[i].setForeground(Color.BLACK);
-                    textFields[i].addFocusListener(new java.awt.event.FocusAdapter() {
-                        @Override
-                        public void focusGained(java.awt.event.FocusEvent evt) {
-                            JTextField textField = (JTextField) evt.getSource();
-                            if (textField.getText().equals("dd/MM/yyyy")) {
-                                textField.setText("");
-                                textField.setForeground(Color.BLACK);
-                            }
-                        }
-
-                        @Override
-                        public void focusLost(java.awt.event.FocusEvent evt) {
-                            JTextField textField = (JTextField) evt.getSource();
-                            if (textField.getText().isEmpty()) {
-                                textField.setText("dd/MM/yyyy");
-                                textField.setForeground(Color.GRAY);
-                            }
-                        }
-                    });
-                } else {
-                    switch (i) {
-                        case 1:
-                            textFields[i].setText(name);
-                            break;
-                    }
+                // Set values from table
+                switch (labels[i]) {
+                    case "Mã Nhân Viên":
+                        textFields[textFieldIndex].setText(maNV);
+                        break;
+                    case "Họ Tên":
+                        textFields[textFieldIndex].setText(hoTen);
+                        break;
+                    case "Ngày Sinh":
+                        textFields[textFieldIndex].setText(ngaySinh);
+                        break;
+                    case "Địa Chỉ":
+                        textFields[textFieldIndex].setText(diaChi);
+                        break;
+                    case "Email":
+                        textFields[textFieldIndex].setText(email);
+                        break;
+                    case "Số Điện Thoại":
+                        textFields[textFieldIndex].setText(soDT);
+                        break;
                 }
                 gbc.gridx = i % 2 == 0 ? 1 : 3;
                 gbc.gridy = row;
-                formPanel.add(textFields[i], gbc);
+                formPanel.add(textFields[textFieldIndex], gbc);
+                textFieldIndex++;
             }
 
             if (i % 2 == 1) {
@@ -437,15 +494,12 @@ public class NhanVien extends JPanel {
             }
         }
 
-        // Để sử dụng trong ActionListener
-        final JComboBox<String> finalCbbGender = cbbGender;
-
         dialog.add(formPanel, BorderLayout.CENTER);
 
         // Buttons panel
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 15));
         buttonPanel.setBackground(new Color(173, 216, 230));
-        JButton btnSave = new JButton("Lưu thông tin");
+        JButton btnSave = new JButton("Lưu Thông Tin");
         btnSave.setBackground(new Color(59, 130, 246));
         btnSave.setForeground(Color.WHITE);
         btnSave.setFont(new Font("Segoe UI", Font.BOLD, 16));
@@ -460,59 +514,72 @@ public class NhanVien extends JPanel {
         btnCancel.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
 
         btnSave.addActionListener(e -> {
-            String newName = textFields[1].getText();
-            String newBirthDate = textFields[3].getText();
-            String newPhone = textFields[4].getText();
-            String newEmail = textFields[5].getText();
-            String newGender = (String) finalCbbGender.getSelectedItem();
+            // Get values from fields
+            String maNVInput = textFields[0].getText().trim();
+            String hoTenInput = textFields[1].getText().trim();
+            String ngaySinhInput = textFields[2].getText().trim();
+            String diaChiInput = textFields[3].getText().trim();
+            String emailInput = textFields[4].getText().trim();
+            String soDTInput = textFields[5].getText().trim();
+            String gioiTinhInput = (String) comboBoxes[0].getSelectedItem();
+            String chucVuInput = (String) comboBoxes[1].getSelectedItem();
 
-            // Kiểm tra định dạng ngày sinh
-            SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
-            dateFormat.setLenient(false);
+            // Validate required fields
+            if (hoTenInput.isEmpty() || ngaySinhInput.isEmpty() || diaChiInput.isEmpty() || soDTInput.isEmpty()) {
+                JOptionPane.showMessageDialog(dialog, "Vui lòng điền đầy đủ thông tin bắt buộc!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            // Validate phone number
+            if (!soDTInput.matches("\\d{10}")) {
+                JOptionPane.showMessageDialog(dialog, "Số điện thoại phải có 10 chữ số!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            // Validate email (if provided)
+            if (!emailInput.isEmpty() && !emailInput.matches("^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$")) {
+                JOptionPane.showMessageDialog(dialog, "Email không hợp lệ!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            // Validate date of birth
+
+            // Create NhanVienDTO object
+            NhanVienDTO nv = new NhanVienDTO();
+            nv.setMaNV(maNVInput);
+            nv.setHoTen(hoTenInput);
+            nv.setGioiTinh(gioiTinhInput);
+            nv.setNgaySinh(ngaySinhInput);
+            nv.setDiaChi(diaChiInput);
+            nv.setEmail(emailInput);
+            nv.setSoDT(soDTInput);
+            nv.setChucVu(chucVuInput);
+
+            // Update database
             try {
-                if (!newBirthDate.equals("dd/MM/yyyy")) {
-                    dateFormat.parse(newBirthDate);
+                DaoNV daoNhanVien = new DaoNV();
+                boolean success = daoNhanVien.suaNhanVien(nv);
+
+                if (success) {
+                    // Update table
+                    table.setValueAt(maNVInput, modelRow, 0);
+                    table.setValueAt(hoTenInput, modelRow, 1);
+                    table.setValueAt(gioiTinhInput, modelRow, 2);
+                    table.setValueAt(ngaySinhInput, modelRow, 3);
+                    table.setValueAt(diaChiInput, modelRow, 4);
+                    table.setValueAt(emailInput, modelRow, 5);
+                    table.setValueAt(soDTInput, modelRow, 6);
+                    table.setValueAt(chucVuInput, modelRow, 7);
+
+                    JOptionPane.showMessageDialog(dialog, "Cập nhật nhân viên thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
+                    dialog.dispose();
                 } else {
-                    newBirthDate = "";
+                    JOptionPane.showMessageDialog(dialog, "Cập nhật nhân viên thất bại!", "Lỗi", JOptionPane.ERROR_MESSAGE);
                 }
-            } catch (ParseException ex) {
-                JOptionPane.showMessageDialog(dialog, "Ngày sinh phải có định dạng dd/MM/yyyy!", "Lỗi", JOptionPane.ERROR_MESSAGE);
-                return;
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(dialog, "Lỗi khi cập nhật: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+                ex.printStackTrace();
             }
-
-            // Kiểm tra định dạng số điện thoại
-            if (!newPhone.equals("Nhập số điện thoại (10 chữ số)")) {
-                if (!newPhone.matches("\\d{10}")) {
-                    JOptionPane.showMessageDialog(dialog, "Số điện thoại phải có 10 chữ số!", "Lỗi", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-            } else {
-                newPhone = "";
-            }
-
-            // Kiểm tra định dạng email (nếu có)
-            if (!newEmail.equals("Nhập email (tùy chọn)")) {
-                if (!newEmail.matches("^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$")) {
-                    JOptionPane.showMessageDialog(dialog, "Email không hợp lệ!", "Lỗi", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-            } else {
-                newEmail = "";
-            }
-
-            // Kiểm tra các trường bắt buộc
-            if (newName.isEmpty() || newBirthDate.isEmpty() || newPhone.isEmpty()) {
-                JOptionPane.showMessageDialog(dialog, "Vui lòng điền đầy đủ các trường bắt buộc!", "Lỗi", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
-            // Cập nhật dữ liệu vào bảng
-            table.setValueAt(newName, modelRow, 1);
-            table.setValueAt(newGender, modelRow, 2);
-            table.setValueAt(newBirthDate, modelRow, 3);
-            table.setValueAt(newPhone, modelRow, 4);
-            table.setValueAt(newEmail, modelRow, 5);
-            dialog.dispose();
         });
 
         btnCancel.addActionListener(e -> dialog.dispose());
@@ -521,14 +588,21 @@ public class NhanVien extends JPanel {
         buttonPanel.add(btnCancel);
         dialog.add(buttonPanel, BorderLayout.SOUTH);
 
+        // Keyboard shortcuts
+        dialog.getRootPane().setDefaultButton(btnSave);
+        dialog.getRootPane().registerKeyboardAction(e -> dialog.dispose(),
+                KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0),
+                JComponent.WHEN_IN_FOCUSED_WINDOW);
+
         dialog.setVisible(true);
     }
+
 
     private JPanel createSearchPanel() {
         JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 0));
         searchPanel.setBackground(backgroundColor);
 
-        cbbFilter = new JComboBox<>(new String[]{"Tất cả", "Họ tên", "Giới tính", "Email"});
+        cbbFilter = new JComboBox<>(new String[]{"Tất cả", "Mã Nhân Viên", "Họ Tên", "Số Điện Thoại", "Email", "Địa Chỉ", "Ngày Sinh", "Giới Tính", "Chức Vụ"});
         cbbFilter.setPreferredSize(new Dimension(100, 25));
 
         txtSearch = new JTextField();
@@ -574,41 +648,65 @@ public class NhanVien extends JPanel {
         return searchPanel;
     }
 
+
+    private void customizeTableAppearance() {
+        table.setRowHeight(35);
+        table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 16));
+        table.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        table.setGridColor(new Color(200, 200, 200));
+        table.setShowGrid(false);
+        table.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
+    }
+
     private JScrollPane createTable() {
+        // Panel chứa table
         JPanel tablePanel = new JPanel(new BorderLayout());
         tablePanel.setBackground(backgroundColor);
         tablePanel.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
 
-        // Cột và dữ liệu mẫu
-        String[] columns = {"MNV", "Họ tên", "Giới tính", "Ngày Sinh", "SDT", "Email"};
-        Object[][] data = {
-            {"1", "Trần Nhật Sinh", "Nam", "20/12/2003", "0387913347", "transinh085@gmail.com"},
-            {"2", "Hoàng Gia Bảo", "Nam", "11/04/2003", "0355574322", "musicanime2501@gmail.com"},
-            {"3", "Đỗ Nam Công Chính", "Nam", "11/04/2003", "0123456789", "chinchinh@gmail.com"},
-            {"4", "Đình Ngọc Ân", "Nam", "03/04/2003", "0123456789", "ngocan@gmail.com"},
-            {"5", "Vũ Trung Hiếu", "Nam", "06/05/2003", "0123456789", "hieu@gmail.com"}
-        };
+        // Columns
+        String[] columns = {"Mã Nhân Viên", "Họ Tên","Giới Tính","Ngày Sinh","Địa Chỉ", "Email",  "Số Điện Thoại","Chức Vụ"};
 
-        DefaultTableModel model = new DefaultTableModel(data, columns) {
+        // Tạo model với 0 row ban đầu
+        DefaultTableModel model = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
             }
         };
 
+        // Tạo table với model
         table = new JTable(model);
-        table.setRowHeight(35);
-        table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 16));
-        table.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        table.setGridColor(new Color(200, 200, 200));
-        table.setShowGrid(false);
+        customizeTableAppearance();
 
-        // Auto-resize columns
-        table.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
+        // Load data (tách riêng để có thể gọi lại khi cần refresh)
+        loadTableData(model);
 
-        JScrollPane scrollPane = new JScrollPane(table);
-        scrollPane.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
-        return scrollPane;
+        return new JScrollPane(table);
+    }
+
+    private void loadTableData(DefaultTableModel model) {
+        try {
+            NhanVienRepo repo = new DaoNV();
+            List<NhanVienDTO> danhSach =repo.layDanhSachNhanVien();
+
+            model.setRowCount(0); // Xóa dữ liệu cũ
+
+            for (NhanVienDTO nv : danhSach) {
+                model.addRow(new Object[]{
+                        nv.getMaNV(),
+                        nv.getHoTen(),
+                        nv.getGioiTinh(),
+                        nv.getNgaySinh(),
+                        nv.getDiaChi(),
+                        nv.getEmail(),
+                        nv.getSoDT(),
+                        nv.getChucVu(),
+                });
+            }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, "Lỗi khi tải dữ liệu: " + e.getMessage());
+        }
     }
 
     private void filterData() {
@@ -640,6 +738,128 @@ public class NhanVien extends JPanel {
     }
 
     private void loadData() {
-        System.out.println("Dữ liệu đã được làm mới.");
+        if (tableModel == null) {
+            tableModel = new DefaultTableModel(
+                    new String[]{"Mã Nhân Viên", "Họ Tên", "Giới Tính", "Ngày Sinh", "Địa Chỉ", "Email", "Số Điện Thoại", "Chức Vụ"}, 0
+            );
+            table.setModel(tableModel);
+        } else {
+            // Đảm bảo có cột nếu tableModel đã tồn tại mà bị xóa cột trước đó
+            if (tableModel.getColumnCount() == 0) {
+                tableModel.setColumnIdentifiers(new String[]{"Mã Nhân Viên", "Họ Tên", "Giới Tính", "Ngày Sinh", "Địa Chỉ", "Email", "Số Điện Thoại", "Chức Vụ"});
+            }
+        }
+
+        tableModel.setRowCount(0); // Xóa dữ liệu cũ
+
+        try {
+            NhanVienRepo repo =new DaoNV();
+            List<NhanVienDTO> danhSach = repo.layDanhSachNhanVien();
+
+            for (NhanVienDTO nv : danhSach) {
+                tableModel.addRow(new Object[]{
+                        nv.getMaNV(),
+                        nv.getHoTen(),
+                        nv.getGioiTinh(),
+                        nv.getNgaySinh(),
+                        nv.getDiaChi(),
+                        nv.getEmail(),
+                        nv.getSoDT(),
+                        nv.getChucVu()
+                });
+            }
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Lỗi khi tải dữ liệu: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+            ex.printStackTrace();
+        }
+    }
+
+
+    private void showEmployeeDetails() {
+        int selectedRow = table.getSelectedRow();
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn một nhân viên để xem chi tiết!", "Cảnh báo", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        int modelRow = table.convertRowIndexToModel(selectedRow);
+        String id = table.getValueAt(modelRow, 0).toString();
+        String name = table.getValueAt(modelRow, 1).toString();
+        String gender = table.getValueAt(modelRow, 2).toString();
+        String birthDate = table.getValueAt(modelRow, 3).toString();
+        String address =table.getValueAt(modelRow,4).toString();
+        String email = table.getValueAt(modelRow, 5).toString();
+        String phone = table.getValueAt(modelRow, 6).toString();
+        String chucvu =table.getValueAt(modelRow,7).toString();
+
+
+        ChiTietNhanVien detailDialog = new ChiTietNhanVien(id, name, gender, birthDate,address, phone, email,chucvu);
+        detailDialog.setVisible(true);
+    }
+
+
+    private void DeleteEmploy() {
+        int selectedRow = table.getSelectedRow();
+        if (selectedRow < 0) {
+            JOptionPane.showMessageDialog(this,
+                    "Vui lòng chọn nhân viên cần xóa",
+                    "Thông báo",
+                    JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        String maNV = table.getValueAt(selectedRow, 0).toString();
+        String tenNV = table.getValueAt(selectedRow, 1).toString();
+
+        // Hiển thị hộp thoại xác nhận
+        int option = JOptionPane.showConfirmDialog(this,
+                "Bạn có chắc chắn muốn xóa nhân viên:\n" +
+                        "Mã: " + maNV + "\n" +
+                        "Tên: " + tenNV,
+                "Xác nhận xóa",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE);
+
+        if (option == JOptionPane.YES_OPTION) {
+            try {
+                DaoNV daoNV =new DaoNV();
+
+                // Thêm kiểm tra có thể xóa
+                if (!kiemTraCoTheXoa(maNV)) {
+                    JOptionPane.showMessageDialog(this,
+                            "Không thể xóa nhân viên do có dữ liệu liên quan",
+                            "Lỗi",
+                            JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                if (daoNV.xoaNhanVien(maNV)) {
+                    // Cập nhật giao diện
+                    ((DefaultTableModel) table.getModel()).removeRow(selectedRow);
+
+                    JOptionPane.showMessageDialog(this,
+                            "Đã xóa nhân viên thành công",
+                            "Thành công",
+                            JOptionPane.INFORMATION_MESSAGE);
+                } else {
+                    JOptionPane.showMessageDialog(this,
+                            "Xóa nhân viên thất bại",
+                            "Lỗi",
+                            JOptionPane.ERROR_MESSAGE);
+                }
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(this,
+                        "Lỗi khi xóa nhân viên: " + e.getMessage(),
+                        "Lỗi",
+                        JOptionPane.ERROR_MESSAGE);
+                e.printStackTrace();
+            }
+        }
+    }
+
+    // Kiểm tra có thể xóa (nếu cần)
+    private boolean kiemTraCoTheXoa(String maNCC) {
+        // Thêm logic kiểm tra nếu cần
+        return true;
     }
 }

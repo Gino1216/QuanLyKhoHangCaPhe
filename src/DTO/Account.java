@@ -10,18 +10,38 @@ package DTO;
  */
 public class Account {
 
+    private String MaNV;
     private String username;
     private String password;
     private int role; // 1: admin, 0: user
 
+
     // Constructor
+
+    public Account(){
+
+    }
     public Account(String username, String password, int role) {
         this.username = username;
         this.password = password;
         this.role = role;
     }
 
-    // Getters and Setters
+    public Account(String maNV, int role, String username, String password) {
+        MaNV = maNV;
+        this.username = username;
+        this.password = password;
+        this.role = role;
+    }
+
+    public String getMaNV() {
+        return MaNV;
+    }
+
+    public void setMaNV(String maNV) {
+        MaNV = maNV;
+    }
+
     public String getUsername() {
         return username;
     }

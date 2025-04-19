@@ -43,8 +43,7 @@ public final class MainFunction extends JToolBar {
         this.repaint();
     }
 
-
-public void setButtonActionListener(String action, Runnable listener) {
+    public void setButtonActionListener(String action, Runnable listener) {
         ButtonToolBar button = btn.get(action);
         if (button != null) {
             button.addActionListener(e -> listener.run());
@@ -70,6 +69,8 @@ public void setButtonActionListener(String action, Runnable listener) {
                 return new ButtonToolBar("XUẤT EXCEL", "export_excel.svg", "view");
             case "phone":
                 return new ButtonToolBar("XEM DS", "phone.svg", "view");
+            case "sucess":
+                return new ButtonToolBar("DUYỆT PHIẾU", "accept-icon.svg", "delete");
             default:
                 return null; // If action is not recognized, return null
         }
