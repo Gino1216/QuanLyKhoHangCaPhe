@@ -1,14 +1,20 @@
 package View;
 
-import DTO.PhieuNhapDTO;
-import DTO.CoffeItemDTO;
-import View.Dialog.CreaterPhieuNhap;
-import View.Dialog.ChiTietNhap;
+import Config.Session;
+import DTO.Account;
+import DTO.ChiTietPhieuNhapDTO;
+import DTO.NhaCungCapDTO;
+import DTO.PNDTO;
+import Dao.DaoAccount;
+import Dao.DaoChiTietPhieuNhap;
+import Dao.DaoNCC;
+import Dao.DaoPhieuNhap;
+import Repository.PhieuNhapRepo;
 import Gui.InputDate;
 import Gui.MainFunction;
-import com.formdev.flatlaf.FlatLightLaf;
+
 import java.awt.*;
-import java.time.LocalDateTime;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.*;
@@ -26,16 +32,23 @@ public class PhieuNhap extends JPanel {
     private JComboBox<String> cbbFilter;
     private JTextField txtSearch;
     private JButton btnRefresh;
-    private InputDate dateStart, dateEnd;
     private DefaultTableModel tableModel;
+    private InputDate dateStart, dateEnd;
     private Color backgroundColor = new Color(255, 255, 255);
-    private List<PhieuNhapDTO> importEntries;
+    private List<PNDTO> importEntries;
+    private JTextField txtReceiptId;
+
+    private JComboBox<String> cbbSupplier;
+    private JComboBox<String> cbbEmployee;
+    private JTextField txtFromAmount;
+    private JTextField txtToAmount;
 
     public PhieuNhap() {
         importEntries = new ArrayList<>();
-        setLayout(new BorderLayout(0, 10));
+        setLayout(new BorderLayout(0, 8));
         setBackground(backgroundColor);
 
+        // Top Panel (Toolbar and Search)
         JPanel topPanel = new JPanel(new BorderLayout());
         topPanel.setBackground(backgroundColor);
         topPanel.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
@@ -48,21 +61,63 @@ public class PhieuNhap extends JPanel {
 
         add(topPanel, BorderLayout.NORTH);
 
+        // Left Panel (Filter Options)
         JPanel leftPanel = createLeftPanel();
         add(leftPanel, BorderLayout.WEST);
 
+        // Center Panel (Table)
         scroll = createTable();
         add(scroll, BorderLayout.CENTER);
 
+        // Setup actions for toolbar buttons
         setupFunctionBarActions();
     }
 
+    private String generateReceiptId() {
+        DaoPhieuNhap daoPhieuNhap = new DaoPhieuNhap();
+        String maPN;
+        int maxAttempts = 10;
+        int attempt = 0;
+        do {
+            maPN = daoPhieuNhap.sinhMaPN();
+            if (maPN == null) {
+                JOptionPane.showMessageDialog(this, "Không thể sinh mã phiếu nhập!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return null;
+            }
+            attempt++;
+        } while (daoPhieuNhap.kiemTraMaPNTonTai(maPN) && attempt < maxAttempts);
+        if (attempt >= maxAttempts) {
+            JOptionPane.showMessageDialog(this, "Không thể tạo mã phiếu nhập duy nhất!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+            return null;
+        }
+        return maPN;
+    }
+
+    private void addMaPNTT() {
+        DaoPhieuNhap daoPhieuNhap = new DaoPhieuNhap();
+        String maPN = generateReceiptId();
+
+        if (maPN == null) {
+            return;
+        }
+
+        if (!daoPhieuNhap.kiemTraMaPNTonTai(maPN)) {
+            daoPhieuNhap.themMaPnVaTT(maPN);
+            loadTableData(tableModel);
+        } else {
+            JOptionPane.showMessageDialog(this, "Mã phiếu nhập đã tồn tại!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
     private void setupFunctionBarActions() {
+        // Nút "Thêm" (create)
         functionBar.setButtonActionListener("create", () -> {
+            addMaPNTT();
             CreaterPhieuNhap createrPhieuNhap = new CreaterPhieuNhap(this);
             createrPhieuNhap.setVisible(true);
         });
 
+        // Nút "Chi tiết" (detail)
         functionBar.setButtonActionListener("detail", () -> {
             int selectedRow = table.getSelectedRow();
             if (selectedRow == -1) {
@@ -71,16 +126,41 @@ public class PhieuNhap extends JPanel {
                 return;
             }
 
-            PhieuNhapDTO entry = importEntries.get(selectedRow);
-            ChiTietNhap detailView = new ChiTietNhap(
-                    entry.getReceiptId(), entry.getTime(), entry.getSupplier(), entry.getSupplierId(),
-                    entry.getSupplierAddress(), entry.getSupplierPhone(), entry.getSupplierEmail(),
-                    entry.getEmployee(), entry.getEmployeeId(), entry.getEmployeePhone(), entry.getEmployeeEmail(),
-                    entry.getTotalAmount(), entry.getStatus(), entry.getCoffeeItems()
+            PNDTO entry = importEntries.get(selectedRow);
+            if (entry == null) {
+                JOptionPane.showMessageDialog(this, "Dữ liệu phiếu nhập không hợp lệ!",
+                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            DaoChiTietPhieuNhap dao = new DaoChiTietPhieuNhap();
+            List<ChiTietPhieuNhapDTO> items;
+            try {
+                items = dao.layChiTietPhieuNhapTheoMaPN(entry.getMaPN());
+                if (items == null || items.isEmpty()) {
+                    JOptionPane.showMessageDialog(this, "Không tìm thấy chi tiết phiếu nhập cho mã: " + entry.getMaPN(),
+                            "Cảnh báo", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(this, "Lỗi khi lấy chi tiết phiếu nhập: " + e.getMessage(),
+                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            ChiTietNhap detail = new ChiTietNhap(
+                    entry.getMaPN(),
+                    entry.getMaNCC(),
+                    entry.getMaNV(),
+                    entry.getNgayNhap(),
+                    String.format("%,.0f", entry.getTongTien()),
+                    entry.getTrangThai(),
+                    items
             );
-            detailView.setVisible(true);
+            detail.setVisible(true);
         });
 
+        // Nút "Hủy" (cancel)
         functionBar.setButtonActionListener("cancel", () -> {
             int selectedRow = table.getSelectedRow();
             if (selectedRow == -1) {
@@ -88,10 +168,34 @@ public class PhieuNhap extends JPanel {
                         "Cảnh báo", JOptionPane.WARNING_MESSAGE);
                 return;
             }
-            table.setValueAt("Hủy", selectedRow, 6);
-            importEntries.get(selectedRow).setStatus("Hủy");
+
+            PNDTO selectedPhieuNhap = importEntries.get(selectedRow);
+            String status = selectedPhieuNhap.getTrangThai();
+
+            if (Session.getRole() == 1) {
+                JOptionPane.showMessageDialog(this, "Không đủ quyền để hủy", "Thông báo", JOptionPane.ERROR_MESSAGE);
+            } else {
+                if ("Hoàn thành".equals(status)) {
+                    JOptionPane.showMessageDialog(this, "Không thể hủy phiếu đã duyệt!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                } else if ("Không duyệt".equals(status)) {
+                    JOptionPane.showMessageDialog(this, "Không thể hủy phiếu đã hủy!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                } else {
+                    table.setValueAt("Không duyệt", selectedRow, 5);
+                    selectedPhieuNhap.setTrangThai("Không duyệt");
+
+                    DaoPhieuNhap daoPhieuNhap = new DaoPhieuNhap();
+                    boolean isSuccess = daoPhieuNhap.huyDuyetPhieuNhap(selectedPhieuNhap);
+
+                    if (isSuccess) {
+                        JOptionPane.showMessageDialog(this, "Hủy phiếu nhập thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
+                    } else {
+                        JOptionPane.showMessageDialog(this, "Lỗi khi hủy phiếu nhập!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+            }
         });
 
+        // Nút "Duyệt" (sucess)
         functionBar.setButtonActionListener("sucess", () -> {
             int selectedRow = table.getSelectedRow();
             if (selectedRow == -1) {
@@ -99,10 +203,56 @@ public class PhieuNhap extends JPanel {
                         "Cảnh báo", JOptionPane.WARNING_MESSAGE);
                 return;
             }
-            table.setValueAt("Đã duyệt", selectedRow, 6);
-            importEntries.get(selectedRow).setStatus("Đã duyệt");
+
+            PNDTO selectedPhieuNhap = importEntries.get(selectedRow);
+            String status = selectedPhieuNhap.getTrangThai();
+
+            if (Session.getRole() == 1) {
+                JOptionPane.showMessageDialog(this, "Không đủ thẩm quyền để duyệt!", "Thông báo", JOptionPane.ERROR_MESSAGE);
+            } else if (Session.getRole() == 2) {
+                if ("Hoàn thành".equals(status)) {
+                    JOptionPane.showMessageDialog(this, "Phiếu nhập này đã được duyệt!", "Thông báo", JOptionPane.ERROR_MESSAGE);
+                } else if ("Không duyệt".equals(status)) {
+                    JOptionPane.showMessageDialog(this, "Không thể duyệt phiếu đã hủy!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                } else if ("Kế toán duyệt".equals(status)) {
+                    JOptionPane.showMessageDialog(this, "Không thể duyệt phiếu đã duyệt!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                } else {
+                    table.setValueAt("Kế toán duyệt", selectedRow, 5);
+                    selectedPhieuNhap.setTrangThai("Kế toán duyệt");
+
+                    DaoPhieuNhap daoPhieuNhap = new DaoPhieuNhap();
+                    boolean isSuccess = daoPhieuNhap.keToanDuyetPhieuNhap(selectedPhieuNhap);
+
+                    if (isSuccess) {
+                        JOptionPane.showMessageDialog(this, "Kế toán duyệt phiếu nhập thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
+                    } else {
+                        JOptionPane.showMessageDialog(this, "Lỗi khi kế toán duyệt phiếu nhập!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+            } else if (Session.getRole() == 3) {
+                if ("Hoàn thành".equals(status)) {
+                    JOptionPane.showMessageDialog(this, "Phiếu nhập này đã được duyệt!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+                } else if (!"Kế toán duyệt".equals(status)) {
+                    JOptionPane.showMessageDialog(this, "Phiếu nhập cần được kế toán duyệt trước!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                } else {
+                    table.setValueAt("Hoàn thành", selectedRow, 5);
+                    selectedPhieuNhap.setTrangThai("Hoàn thành");
+
+                    DaoPhieuNhap daoPhieuNhap = new DaoPhieuNhap();
+                    boolean isSuccess = daoPhieuNhap.duyetPhieuNhap(selectedPhieuNhap);
+
+                    if (isSuccess) {
+                        JOptionPane.showMessageDialog(this, "Duyệt phiếu nhập thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
+                    } else {
+                        JOptionPane.showMessageDialog(this, "Lỗi khi duyệt phiếu nhập!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+            } else {
+                JOptionPane.showMessageDialog(this, "Vai trò không hợp lệ!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+            }
         });
 
+        // Nút "Xuất" (export)
         functionBar.setButtonActionListener("export", () -> {
             JOptionPane.showMessageDialog(this, "Chức năng xuất phiếu nhập chưa được triển khai!",
                     "Thông báo", JOptionPane.INFORMATION_MESSAGE);
@@ -113,7 +263,7 @@ public class PhieuNhap extends JPanel {
         JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 0));
         searchPanel.setBackground(backgroundColor);
 
-        cbbFilter = new JComboBox<>(new String[]{"Tất cả", "Mã phiếu", "Nhà cung cấp", "Nhân viên nhập"});
+        cbbFilter = new JComboBox<>(new String[]{"Tất cả", "Mã phiếu nhập", "Nhà cung cấp", "Nhân viên nhập", "Ngày nhập", "Tổng tiền", "Trạng thái"});
         cbbFilter.setPreferredSize(new Dimension(100, 25));
 
         txtSearch = new JTextField();
@@ -135,7 +285,6 @@ public class PhieuNhap extends JPanel {
 
         btnRefresh.addActionListener(e -> {
             txtSearch.setText("");
-            loadData();
             table.setRowSorter(null);
         });
 
@@ -164,7 +313,6 @@ public class PhieuNhap extends JPanel {
         leftPanel.setBackground(backgroundColor);
         leftPanel.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
         leftPanel.setPreferredSize(new Dimension(250, 0));
-
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(5, 5, 5, 5);
         gbc.fill = GridBagConstraints.HORIZONTAL;
@@ -181,8 +329,14 @@ public class PhieuNhap extends JPanel {
         leftPanel.add(lblSupplier, gbc);
 
         gbc.gridy++;
-        JComboBox<String> cbbSupplier = new JComboBox<>(new String[]{"Tất cả", "Công Ty Cafe Trung Nguyên",
-                "Nông Trại Cafe Đắk Lắk", "Hợp Tác Xã Cafe Lâm Đồng"});
+        DaoNCC daoNCC = new DaoNCC();
+        List<NhaCungCapDTO> nhaCungCapList = daoNCC.layDanhSachNhaCungCap();
+        List<String> supplierOptions = new ArrayList<>();
+        supplierOptions.add("Tất cả");
+        for (NhaCungCapDTO ncc : nhaCungCapList) {
+            supplierOptions.add(ncc.getMaNCC());
+        }
+        cbbSupplier = new JComboBox<>(supplierOptions.toArray(new String[0]));
         cbbSupplier.setPreferredSize(new Dimension(200, 35));
         leftPanel.add(cbbSupplier, gbc);
 
@@ -191,7 +345,14 @@ public class PhieuNhap extends JPanel {
         leftPanel.add(lblEmployee, gbc);
 
         gbc.gridy++;
-        JComboBox<String> cbbEmployee = new JComboBox<>(new String[]{"Tất cả", "Hoàng Gia Bảo"});
+        DaoAccount daoAccount = new DaoAccount();
+        List<Account> nhanVienList = daoAccount.layDanhSachAccountFull();
+        List<String> employeeOptions = new ArrayList<>();
+        employeeOptions.add("Tất cả");
+        for (Account nv : nhanVienList) {
+            employeeOptions.add(nv.getUsername());
+        }
+        cbbEmployee = new JComboBox<>(employeeOptions.toArray(new String[0]));
         cbbEmployee.setPreferredSize(new Dimension(200, 35));
         leftPanel.add(cbbEmployee, gbc);
 
@@ -208,7 +369,7 @@ public class PhieuNhap extends JPanel {
         leftPanel.add(lblFromAmount, gbc);
 
         gbc.gridy++;
-        JTextField txtFromAmount = new JTextField();
+        txtFromAmount = new JTextField();
         txtFromAmount.setPreferredSize(new Dimension(200, 35));
         leftPanel.add(txtFromAmount, gbc);
 
@@ -217,112 +378,158 @@ public class PhieuNhap extends JPanel {
         leftPanel.add(lblToAmount, gbc);
 
         gbc.gridy++;
-        JTextField txtToAmount = new JTextField();
+        txtToAmount = new JTextField();
         txtToAmount.setPreferredSize(new Dimension(200, 35));
         leftPanel.add(txtToAmount, gbc);
+
+        cbbSupplier.addActionListener(e -> filterData());
+        cbbEmployee.addActionListener(e -> filterData());
+        txtFromAmount.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) { filterData(); }
+            @Override
+            public void removeUpdate(DocumentEvent e) { filterData(); }
+            @Override
+            public void changedUpdate(DocumentEvent e) { filterData(); }
+        });
+        txtToAmount.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) { filterData(); }
+            @Override
+            public void removeUpdate(DocumentEvent e) { filterData(); }
+            @Override
+            public void changedUpdate(DocumentEvent e) { filterData(); }
+        });
+        dateStart.addPropertyChangeListener("date", e -> filterData());
+        dateEnd.addPropertyChangeListener("date", e -> filterData());
 
         return leftPanel;
     }
 
-    private JScrollPane createTable() {
-        String[] columns = {"STT", "Mã phiếu", "Nhà cung cấp", "Nhân viên nhập", "Thời gian", "Tổng tiền", "Trạng thái"};
-        tableModel = new DefaultTableModel(new Object[][]{}, columns) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return false;
+    public void loadTableData(DefaultTableModel model) {
+        try {
+            PhieuNhapRepo repo = new DaoPhieuNhap();
+            List<PNDTO> danhSach = repo.layDanhSachPhieuNhap();
+            importEntries.clear();
+            importEntries.addAll(danhSach);
+
+            model.setRowCount(0);
+            DecimalFormat df = new DecimalFormat("#,###");
+
+            for (PNDTO pn : danhSach) {
+                model.addRow(new Object[]{
+                        pn.getMaPN(),
+                        pn.getMaNCC(),
+                        pn.getMaNV(),
+                        pn.getNgayNhap(),
+                        df.format(pn.getTongTien()),
+                        pn.getTrangThai()
+                });
             }
-        };
-
-        List<CoffeItemDTO> coffeeItems1 = List.of(
-                new CoffeItemDTO(1, "CF001", "Cafe Đắk Lắk", "Arabica", 50.0, 150000, 10),
-                new CoffeItemDTO(2, "CF002", "Cafe Buôn Ma Thuột", "Robusta", 50.0, 140000, 5)
-        );
-        importEntries.add(new PhieuNhapDTO("PN001", "Công Ty Cafe Trung Nguyên", "NCC001",
-                "123 Đường Láng, Hà Nội", "0912345678", "trungnguyen@example.com", "Hoàng Gia Bảo",
-                "NV001", "0987654321", "hoanggiabao@example.com", LocalDateTime.of(2025, 4, 14, 8, 0),
-                10000000, "Đã duyệt", coffeeItems1));
-
-        List<CoffeItemDTO> coffeeItems2 = List.of(
-                new CoffeItemDTO(1, "CF003", "Cafe Lâm Đồng", "Culi", 50.0, 130000, 8)
-        );
-        importEntries.add(new PhieuNhapDTO("PN002", "Nông Trại Cafe Đắk Lắk", "NCC002",
-                "456 Nguyễn Trãi, TP.HCM", "0923456789", "daklak@example.com", "Hoàng Gia Bảo",
-                "NV002", "0976543210", "hoanggiabao@example.com", LocalDateTime.of(2025, 4, 13, 14, 30),
-                6000000, "Chưa duyệt", coffeeItems2));
-
-        List<CoffeItemDTO> coffeeItems3 = List.of(
-                new CoffeItemDTO(1, "CF004", "Cafe Gia Lai", "Blend", 50.0, 145000, 12),
-                new CoffeItemDTO(2, "CF005", "Cafe Khe Sanh", "Robusta", 50.0, 135000, 6)
-        );
-        importEntries.add(new PhieuNhapDTO("PN003", "Hợp Tác Xã Cafe Lâm Đồng", "NCC003",
-                "789 Lê Lợi, Đà Nẵng", "0934567890", "lamdong@example.com", "Hoàng Gia Bảo",
-                "NV003", "0965432109", "hoanggiabao@example.com", LocalDateTime.of(2025, 4, 12, 10, 15),
-                12500000, "Đã duyệt", coffeeItems3));
-
-        for (int i = 0; i < importEntries.size(); i++) {
-            tableModel.addRow(importEntries.get(i).toTableRow(i + 1));
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, "Lỗi khi tải dữ liệu: " + e.getMessage());
         }
+    }
 
-        table = new JTable(tableModel);
+    private void customizeTableAppearance() {
         table.setRowHeight(35);
         table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 16));
         table.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         table.setGridColor(new Color(200, 200, 200));
         table.setShowGrid(false);
         table.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
+    }
 
-        JScrollPane scrollPane = new JScrollPane(table);
-        scrollPane.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
-        return scrollPane;
+    private JScrollPane createTable() {
+        JPanel tablePanel = new JPanel(new BorderLayout());
+        tablePanel.setBackground(backgroundColor);
+        tablePanel.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
+
+        String[] columns = {"Mã phiếu nhập", "Nhà cung cấp", "Nhân viên nhập", "Ngày nhập", "Tổng tiền", "Trạng thái"};
+        tableModel = new DefaultTableModel(columns, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+
+        table = new JTable(tableModel);
+        customizeTableAppearance();
+        loadTableData(tableModel);
+
+        return new JScrollPane(table);
     }
 
     private void filterData() {
-        String searchText = txtSearch.getText().toLowerCase();
-        String selectedFilter = (String) cbbFilter.getSelectedItem();
         TableRowSorter<TableModel> sorter = new TableRowSorter<>(table.getModel());
         table.setRowSorter(sorter);
 
-        if (searchText.isEmpty()) {
+        List<RowFilter<TableModel, Object>> filters = new ArrayList<>();
+
+        String searchText = txtSearch.getText().trim().toLowerCase();
+        String selectedFilter = (String) cbbFilter.getSelectedItem();
+        if (!searchText.isEmpty()) {
+            int[] columnIndices;
+            if ("Tất cả".equals(selectedFilter)) {
+                columnIndices = new int[]{0, 1, 2, 3, 4, 5};
+            } else {
+                int columnIndex = switch (selectedFilter) {
+                    case "Mã phiếu nhập" -> 0;
+                    case "Nhà cung cấp" -> 1;
+                    case "Nhân viên nhập" -> 2;
+                    case "Ngày nhập" -> 3;
+                    case "Tổng tiền" -> 4;
+                    case "Trạng thái" -> 5;
+                    default -> 0;
+                };
+                columnIndices = new int[]{columnIndex};
+            }
+            filters.add(RowFilter.regexFilter("(?i)" + java.util.regex.Pattern.quote(searchText), columnIndices));
+        }
+
+        String selectedSupplier = (String) cbbSupplier.getSelectedItem();
+        if (!"Tất cả".equals(selectedSupplier)) {
+            filters.add(RowFilter.regexFilter("^" + java.util.regex.Pattern.quote(selectedSupplier) + "$", 1));
+        }
+
+        String selectedEmployee = (String) cbbEmployee.getSelectedItem();
+        if (!"Tất cả".equals(selectedEmployee)) {
+            filters.add(RowFilter.regexFilter("^" + java.util.regex.Pattern.quote(selectedEmployee) + "$", 2));
+        }
+
+        String fromAmountStr = txtFromAmount.getText().trim();
+        String toAmountStr = txtToAmount.getText().trim();
+        if (!fromAmountStr.isEmpty() || !toAmountStr.isEmpty()) {
+            filters.add(new RowFilter<>() {
+                @Override
+                public boolean include(Entry<? extends TableModel, ? extends Object> entry) {
+                    String amountStr = (String) entry.getValue(4);
+                    try {
+                        double amount = Double.parseDouble(amountStr.replace(",", ""));
+                        if (!fromAmountStr.isEmpty()) {
+                            double fromAmount = Double.parseDouble(fromAmountStr);
+                            if (amount < fromAmount) {
+                                return false;
+                            }
+                        }
+                        if (!toAmountStr.isEmpty()) {
+                            double toAmount = Double.parseDouble(toAmountStr);
+                            if (amount > toAmount) {
+                                return false;
+                            }
+                        }
+                        return true;
+                    } catch (NumberFormatException e) {
+                        return false;
+                    }
+                }
+            });
+        }
+
+        if (filters.isEmpty()) {
             sorter.setRowFilter(null);
-            return;
-        }
-
-        int columnIndex = switch (selectedFilter) {
-            case "Mã phiếu" ->
-                    1;
-            case "Nhà cung cấp" ->
-                    2;
-            case "Nhân viên nhập" ->
-                    3;
-            default ->
-                    -1;
-        };
-
-        RowFilter<TableModel, Object> rf;
-        if (columnIndex == -1) {
-            rf = RowFilter.regexFilter("(?i)" + searchText, 1, 2, 3, 4, 6);
         } else {
-            rf = RowFilter.regexFilter("(?i)" + searchText, columnIndex);
+            sorter.setRowFilter(RowFilter.andFilter(filters));
         }
-        sorter.setRowFilter(rf);
-    }
-
-    private void loadData() {
-        tableModel.setRowCount(0);
-        for (int i = 0; i < importEntries.size(); i++) {
-            tableModel.addRow(importEntries.get(i).toTableRow(i + 1));
-        }
-    }
-
-    public void addPhieuNhap(String receiptId, String supplier, String supplierId, String supplierAddress,
-                             String supplierPhone, String supplierEmail, String employee, String employeeId,
-                             String employeePhone, String employeeEmail, LocalDateTime time, long totalAmount,
-                             List<CoffeItemDTO> coffeeItems) {
-        int stt = table.getRowCount() + 1;
-        PhieuNhapDTO entry = new PhieuNhapDTO(receiptId, supplier, supplierId, supplierAddress,
-                supplierPhone, supplierEmail, employee, employeeId, employeePhone, employeeEmail,
-                time, totalAmount, "Chưa duyệt", coffeeItems);
-        importEntries.add(entry);
-        tableModel.addRow(entry.toTableRow(stt));
     }
 }

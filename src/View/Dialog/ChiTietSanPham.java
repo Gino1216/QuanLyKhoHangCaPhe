@@ -1,17 +1,13 @@
 /*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ * Click nbproject://SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbproject://SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
 package View.Dialog;
 
+import PDF.PDFExporter;
 import com.formdev.flatlaf.FlatLightLaf;
-import java.awt.*;
 import javax.swing.*;
-
-/**
- *
- * @author hjepr
- */
+import java.awt.*;
 
 public class ChiTietSanPham extends JDialog {
 
@@ -20,7 +16,7 @@ public class ChiTietSanPham extends JDialog {
     private Color buttonColor = new Color(59, 130, 246);
     private Color cancelButtonColor = new Color(239, 68, 68);
 
-    public ChiTietSanPham(String id, String name, String quantity,String state,String expiryDate, String PriceN,String PriceX) {
+    public ChiTietSanPham(String id, String name, String quantity, String state, String expiryDate, String PriceN, String PriceX) {
         FlatLightLaf.setup();
         setTitle("Chi Tiết Sản Phẩm");
         setSize(1200, 800);
@@ -47,8 +43,8 @@ public class ChiTietSanPham extends JDialog {
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.anchor = GridBagConstraints.WEST;
 
-        String[] labels = {"Mã sản phẩm", "Tên sản phẩm", "Số lượng", "Tình trạng", "Hạn sử dụng", "Giá xuất","Giá nhập"};
-        String[] values = {id, name, quantity,state, expiryDate, PriceX, PriceN};
+        String[] labels = {"Mã sản phẩm", "Tên sản phẩm", "Số lượng", "Tình trạng", "Hạn sử dụng", "Giá xuất", "Giá nhập"};
+        String[] values = {id, name, quantity, state, expiryDate, PriceX, PriceN};
 
         for (int i = 0; i < labels.length; i++) {
             JLabel label = new JLabel(labels[i]);
@@ -80,9 +76,12 @@ public class ChiTietSanPham extends JDialog {
         btnExportPDF.setFont(new Font("Segoe UI", Font.BOLD, 16));
         btnExportPDF.setPreferredSize(new Dimension(180, 50));
         btnExportPDF.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+
         btnExportPDF.addActionListener(e -> {
-            JOptionPane.showMessageDialog(this, "Chức năng xuất file PDF chưa được triển khai!",
-                    "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+            String[] labelsPDF = {"Mã sản phẩm:", "Tên sản phẩm:", "Số lượng:", "Tình trạng:", "Hạn sử dụng:", "Giá xuất:", "Giá nhập:"};
+            String[] valuesPDF = {id, name, quantity, state, expiryDate, PriceX, PriceN};
+            PDFExporter exporter = new PDFExporter();
+            exporter.exportToPDF(this, "CHI TIẾT SẢN PHẨM", labelsPDF, valuesPDF, "E:/ChiTietSanPham_" + id + ".pdf");
         });
 
         JButton btnCancel = new JButton("Hủy bỏ");

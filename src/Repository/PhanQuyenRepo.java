@@ -16,4 +16,7 @@ public interface PhanQuyenRepo {
     List<PhanQuyenDTO> timKiemQuyen(String keyword);
 
     boolean kiemTraMaQuyenTonTai(int maQuyen);
+
+    void xuatExcel(String filePath);
+
 }

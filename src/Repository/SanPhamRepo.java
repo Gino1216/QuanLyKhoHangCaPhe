@@ -1,11 +1,9 @@
 package Repository;
 
 import DTO.SanPhamDTO;
-
 import java.util.List;
 
 public interface SanPhamRepo {
-
     // Thêm sản phẩm
     void themSanPham(SanPhamDTO sp);
 
@@ -21,5 +19,12 @@ public interface SanPhamRepo {
     // Lấy toàn bộ danh sách sản phẩm
     List<SanPhamDTO> layDanhSachSanPham();
 
+    // Kiểm tra mã sản phẩm tồn tại
     boolean kiemTraMaSPTonTai(String kew);
+
+    // Xuất danh sách sản phẩm ra file Excel
+    void xuatExcel(String filePath);
+
+    int demSoLuongSanPham();
+
 }

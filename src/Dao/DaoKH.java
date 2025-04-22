@@ -9,6 +9,16 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
+
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+
+import java.io.FileOutputStream;
+
+
 public class DaoKH implements KhachHangRepo {
 
     @Override
@@ -129,6 +139,53 @@ public class DaoKH implements KhachHangRepo {
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
+        }
+    }
+
+    @Override
+    public void xuatExcel(String filePath) {
+        List<KhachHangDTO> khachHangList = layDanhSachKhachHang();
+
+        Workbook workbook = new XSSFWorkbook();
+        Sheet sheet = workbook.createSheet("DanhSachKhachHang");
+
+        // Tạo dòng tiêu đề
+        Row headerRow = sheet.createRow(0);
+        String[] columns = {"Mã KH", "Họ Tên", "Địa Chỉ", "Ngày Tham Gia", "Email", "Số ĐT"};
+        for (int i = 0; i < columns.length; i++) {
+            Cell cell = headerRow.createCell(i);
+            cell.setCellValue(columns[i]);
+        }
+
+        // Ghi dữ liệu
+        int rowNum = 1;
+        for (KhachHangDTO kh : khachHangList) {
+            Row row = sheet.createRow(rowNum++);
+            row.createCell(0).setCellValue(kh.getMaKH());
+            row.createCell(1).setCellValue(kh.getHoTen());
+            row.createCell(2).setCellValue(kh.getDiaChi());
+            row.createCell(3).setCellValue(kh.getNgayThamGia());
+            row.createCell(4).setCellValue(kh.getEmail());
+            row.createCell(5).setCellValue(kh.getSoDT());
+        }
+
+        // Tự động chỉnh cột
+        for (int i = 0; i < columns.length; i++) {
+            sheet.autoSizeColumn(i);
+        }
+
+        try (FileOutputStream fileOut = new FileOutputStream(filePath)) {
+            workbook.write(fileOut);
+            JOptionPane.showMessageDialog(null, "Xuất file Excel thành công tại: " + filePath, "Thành công", JOptionPane.INFORMATION_MESSAGE);
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, "Lỗi khi xuất file Excel: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        } finally {
+            try {
+                workbook.close();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 }

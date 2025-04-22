@@ -14,4 +14,6 @@ public interface ChiTietPhieuXuatRepo {
     List<ChiTietPhieuXuatDTO> layChiTietPhieuXuatTheoMaPX(String maPX);
 
     boolean kiemTraTonTai(String maPX, String maSP);
+
+
 }

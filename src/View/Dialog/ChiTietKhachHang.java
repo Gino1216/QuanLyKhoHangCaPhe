@@ -1,17 +1,13 @@
 /*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ * Click nbproject://SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbproject://SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
 package View.Dialog;
 
+import PDF.PDFExporter;
 import com.formdev.flatlaf.FlatLightLaf;
 import java.awt.*;
 import javax.swing.*;
-
-/**
- *
- * @author hjepr
- */
 
 public class ChiTietKhachHang extends JDialog {
 
@@ -81,8 +77,10 @@ public class ChiTietKhachHang extends JDialog {
         btnExportPDF.setPreferredSize(new Dimension(150, 40));
         btnExportPDF.setBorder(BorderFactory.createEmptyBorder(8, 15, 8, 15));
         btnExportPDF.addActionListener(e -> {
-            JOptionPane.showMessageDialog(this, "Chức năng xuất file PDF chưa được triển khai!", 
-                    "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+            String[] labelsPDF = {"Mã khách hàng:", "Tên khách hàng:", "Địa chỉ:", "Ngày tham gia:", "Email:", "Số điện thoại:"};
+            String[] valuesPDF = {id, name, address, joinDate, email, phone};
+            PDFExporter exporter = new PDFExporter();
+            exporter.exportToPDF(this, "CHI TIẾT KHÁCH HÀNG", labelsPDF, valuesPDF, "E:/ChiTietKhachHang_" + id + ".pdf");
         });
 
         JButton btnCancel = new JButton("Hủy bỏ");

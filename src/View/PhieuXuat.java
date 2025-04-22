@@ -1,18 +1,25 @@
 package View;
 
-import DTO.PXDTO;
-import Dao.DaoPhieuXuat;
+import Config.Session;
+import DTO.*;
+import Dao.*;
 import Repository.PhieuXuatRepo;
-import View.Dialog.CreaterPhieuXuat;
 import Gui.InputDate;
 import Gui.MainFunction;
+
 import java.awt.*;
 import java.text.DecimalFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.regex.Pattern;
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
@@ -29,9 +36,20 @@ public class PhieuXuat extends JPanel {
     private InputDate dateStart, dateEnd;
     private Color backgroundColor = new Color(255, 255, 255);
     private List<PXDTO> exportEntries;
+    private JTextField txtReceiptId;
+
+    private JComboBox<String> cbbCustomer;
+    private JComboBox<String> cbbEmployee;
+    private JTextField txtFromAmount;
+    private JTextField txtToAmount;
+    // Ánh xạ từ tên sang mã
+    private Map<String, String> customerNameToCodeMap;
+    private Map<String, String> employeeNameToCodeMap;
 
     public PhieuXuat() {
         exportEntries = new ArrayList<>();
+        customerNameToCodeMap = new HashMap<>();
+        employeeNameToCodeMap = new HashMap<>();
         setLayout(new BorderLayout(0, 8));
         setBackground(backgroundColor);
 
@@ -60,52 +78,212 @@ public class PhieuXuat extends JPanel {
         setupFunctionBarActions();
     }
 
+    private String generateReceiptId() {
+        DaoPhieuXuat daoPhieuXuat = new DaoPhieuXuat();
+        String maPX;
+        int maxAttempts = 10; // Giới hạn tối đa số lần thử
+        int attempt = 0;
+        do {
+            maPX = daoPhieuXuat.sinhMaPX(); // Sử dụng sinhMaPX từ DaoPhieuXuat
+            if (maPX == null) {
+                JOptionPane.showMessageDialog(this, "Không thể sinh mã phiếu xuất!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return null;
+            }
+            attempt++;
+        } while (daoPhieuXuat.kiemTraMaPXTonTai(maPX) && attempt < maxAttempts);
+        if (attempt >= maxAttempts) {
+            JOptionPane.showMessageDialog(this, "Không thể tạo mã phiếu xuất duy nhất!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+            return null;
+        }
+        return maPX;
+    }
+
+    private void addMaPXTT() {
+        DaoPhieuXuat daoPhieuXuat = new DaoPhieuXuat();
+        String maPX = generateReceiptId();
+
+        if (maPX == null) {
+            return;
+        }
+
+        if (!daoPhieuXuat.kiemTraMaPXTonTai(maPX)) {
+            daoPhieuXuat.themMaPxVaTT(maPX); // Thêm mã phiếu xuất vào database
+            loadTableData(tableModel); // Cập nhật bảng
+        } else {
+            JOptionPane.showMessageDialog(this, "Mã phiếu xuất đã tồn tại!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
     private void setupFunctionBarActions() {
         // Nút "Thêm" (create)
         functionBar.setButtonActionListener("create", () -> {
+            addMaPXTT(); // Tự động thêm mã phiếu xuất vào database và cập nhật bảng
             CreaterPhieuXuat createrPhieuXuat = new CreaterPhieuXuat(this);
             createrPhieuXuat.setVisible(true);
         });
-
         // Nút "Chi tiết" (detail)
         functionBar.setButtonActionListener("detail", () -> {
             int selectedRow = table.getSelectedRow();
+            System.out.println("Selected row: " + selectedRow);
             if (selectedRow == -1) {
-                JOptionPane.showMessageDialog(this, "Vui lòng chọn một phiếu xuất để xem chi tiết!", "Cảnh báo", JOptionPane.WARNING_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Vui lòng chọn một phiếu xuất để xem chi tiết!",
+                        "Cảnh báo", JOptionPane.WARNING_MESSAGE);
                 return;
             }
 
-            // Lấy thông tin từ hàng được chọn
             PXDTO entry = exportEntries.get(selectedRow);
-            // TODO: Cần cập nhật dialog ChiTietXuat để hiển thị thông tin từ PXDTO
-            JOptionPane.showMessageDialog(this, "Chức năng xem chi tiết chưa được cập nhật!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+            System.out.println("Selected entry: " + entry.getMaPX());
+            if (entry == null) {
+                JOptionPane.showMessageDialog(this, "Dữ liệu phiếu xuất không hợp lệ!",
+                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            String formattedDate = entry.getThoiGian() != null
+                    ? entry.getThoiGian().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))
+                    : "";
+
+            DaoChiTietPhieuXuat dao = new DaoChiTietPhieuXuat();
+            List<ChiTietPhieuXuatDTO> coffeeItems;
+            try {
+                coffeeItems = dao.layChiTietPhieuXuatHoanThanhTheoMaPX(entry.getMaPX());
+                System.out.println("Coffee items size: " + (coffeeItems != null ? coffeeItems.size() : "null"));
+                if (coffeeItems == null || coffeeItems.isEmpty()) {
+                    JOptionPane.showMessageDialog(this, "Không tìm thấy chi tiết phiếu xuất cho mã: " + entry.getMaPX(),
+                            "Cảnh báo", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                JOptionPane.showMessageDialog(this, "Lỗi khi lấy chi tiết phiếu xuất: " + e.getMessage(),
+                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            ChiTietXuat detail = new ChiTietXuat(
+                    entry.getMaPX(),
+                    entry.getMaKhachHang(),
+                    entry.getMaNhanVien(),
+                    formattedDate,
+                    String.format("%,.0f", entry.getTongTien()),
+                    entry.getTrangThai(),
+                    coffeeItems
+            );
+            System.out.println("ChiTietXuat params: maPX=" + entry.getMaPX() + ", coffeeItemsSize=" +
+                    (coffeeItems != null ? coffeeItems.size() : "null"));
+            detail.setVisible(true);
         });
 
-        // Nút "Hủy" (cancel)
+        //cancel
         functionBar.setButtonActionListener("cancel", () -> {
             int selectedRow = table.getSelectedRow();
             if (selectedRow == -1) {
-                JOptionPane.showMessageDialog(this, "Vui lòng chọn một phiếu xuất để hủy!", "Cảnh báo", JOptionPane.WARNING_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Vui lòng chọn một phiếu xuất để duyệt!",
+                        "Cảnh báo", JOptionPane.WARNING_MESSAGE);
                 return;
             }
-            table.setValueAt("Hủy", selectedRow, 6);
-            exportEntries.get(selectedRow).setTrangThai("Hủy");
+
+            String maPX = (String) table.getValueAt(selectedRow, 0);
+
+            PXDTO selectedPhieuXuat = exportEntries.get(selectedRow);
+
+            String status = selectedPhieuXuat.getTrangThai();
+
+            if(Session.getRole()==1){
+                JOptionPane.showMessageDialog(this,"Không đủ quyền để hủy","Thông báo",JOptionPane.ERROR_MESSAGE);
+            }else{
+                if ("Hoàn thành".equals(status)) {
+                    JOptionPane.showMessageDialog(this, "Không thể hủy phiếu đã duyệt!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                }else if("Không duyệt".equals(status)){
+                    JOptionPane.showMessageDialog(this, "Không thể hủy phiếu đã hủy!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                }
+                else {
+                    table.setValueAt("Không duyệt", selectedRow, 5);  // Column 6 is where the status is stored
+                    selectedPhieuXuat.setTrangThai("Không duyệt");
+
+                    // Call DuyetPhieuXuat to update the status in the database
+                    DaoPhieuXuat daoPhieuXuat = new DaoPhieuXuat();  // Assuming you have this DAO available
+                    boolean isSuccess = daoPhieuXuat.DuyetPhieuXuat(selectedPhieuXuat);
+
+                    // If updating the database was successful, show a success message
+                    if (isSuccess) {
+                        JOptionPane.showMessageDialog(this, "Không duyệt thành công !", "Thành công", JOptionPane.INFORMATION_MESSAGE);
+                    } else {
+                        JOptionPane.showMessageDialog(this, "Lỗi khi duyệt phiếu xuất!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+            }
         });
 
-        // Nút "Duyệt" (sucess)
         functionBar.setButtonActionListener("sucess", () -> {
             int selectedRow = table.getSelectedRow();
             if (selectedRow == -1) {
-                JOptionPane.showMessageDialog(this, "Vui lòng chọn một phiếu xuất để duyệt!", "Cảnh báo", JOptionPane.WARNING_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Vui lòng chọn một phiếu xuất để duyệt!",
+                        "Cảnh báo", JOptionPane.WARNING_MESSAGE);
                 return;
             }
-            table.setValueAt("Đã Duyệt", selectedRow, 6);
-            exportEntries.get(selectedRow).setTrangThai("Đã Duyệt");
+
+            String maPX = (String) table.getValueAt(selectedRow, 0);
+
+            PXDTO selectedPhieuXuat = exportEntries.get(selectedRow);
+
+            String status = selectedPhieuXuat.getTrangThai();
+
+            if (Session.getRole() == 1) {
+                JOptionPane.showMessageDialog(this, "Không đủ thẩm quyền để duyệt!", "Thông báo", JOptionPane.ERROR_MESSAGE);
+            } else if (Session.getRole() == 2) {
+                if ("Hoàn thành".equals(status)) {
+                    JOptionPane.showMessageDialog(this, "Phiếu xuất này đã được duyệt!", "Thông báo", JOptionPane.ERROR_MESSAGE);
+                } else if ("Không duyệt".equals(status)) {
+                    JOptionPane.showMessageDialog(this, "Không thể duyệt phiếu đã hủy!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                }else if ("Kế toán duyệt".equals(status)) {
+                    JOptionPane.showMessageDialog(this, "Không thể duyệt phiếu đã duyệt!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                } else {
+                    // Cập nhật trạng thái trên giao diện và đối tượng
+                    table.setValueAt("Kế toán duyệt", selectedRow, 5); // Cột 5 là cột trạng thái
+                    selectedPhieuXuat.setTrangThai("Kế toán duyệt");
+
+                    // Gọi DAO để cập nhật trạng thái "Kế toán duyệt" trong cơ sở dữ liệu
+                    DaoPhieuXuat daoPhieuXuat = new DaoPhieuXuat();
+                    boolean isSuccess = daoPhieuXuat.keToanDuyetPhieuXuat(selectedPhieuXuat);
+
+                    // Thông báo kết quả
+                    if (isSuccess) {
+                        JOptionPane.showMessageDialog(this, "Kế toán duyệt phiếu xuất thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
+                    } else {
+                        JOptionPane.showMessageDialog(this, "Lỗi khi kế toán duyệt phiếu xuất!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+            } else if (Session.getRole() == 3) {
+                if ("Hoàn thành".equals(status)) {
+                    JOptionPane.showMessageDialog(this, "Phiếu xuất này đã được duyệt!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+                }else if (!"Kế toán duyệt".equals(status)) {
+                    JOptionPane.showMessageDialog(this, "Phiếu xuất cần được kế toán duyệt trước!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                }else {
+                    // Cập nhật trạng thái trên giao diện và đối tượng
+                    table.setValueAt("Hoàn thành", selectedRow, 5); // Cột 5 là cột trạng thái
+                    selectedPhieuXuat.setTrangThai("Hoàn thành");
+
+                    // Gọi DAO để cập nhật trạng thái "Hoàn thành" trong cơ sở dữ liệu
+                    DaoPhieuXuat daoPhieuXuat = new DaoPhieuXuat();
+                    boolean isSuccess = daoPhieuXuat.DuyetPhieuXuat(selectedPhieuXuat);
+
+                    // Thông báo kết quả
+                    if (isSuccess) {
+                        JOptionPane.showMessageDialog(this, "Duyệt phiếu xuất thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
+                    } else {
+                        JOptionPane.showMessageDialog(this, "Lỗi khi duyệt phiếu xuất!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+            } else {
+                JOptionPane.showMessageDialog(this, "Vai trò không hợp lệ!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+            }
         });
 
         // Nút "Xuất" (export)
         functionBar.setButtonActionListener("export", () -> {
-            JOptionPane.showMessageDialog(this, "Chức năng xuất phiếu xuất chưa được triển khai!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Chức năng xuất phiếu xuất chưa được triển khai!",
+                    "Thông báo", JOptionPane.INFORMATION_MESSAGE);
         });
     }
 
@@ -113,7 +291,7 @@ public class PhieuXuat extends JPanel {
         JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 0));
         searchPanel.setBackground(backgroundColor);
 
-        cbbFilter = new JComboBox<>(new String[]{"Tất cả", "Mã phiếu xuất", "Khách hàng", "Nhân viên"});
+        cbbFilter = new JComboBox<>(new String[]{"Tất cả", "Mã phiếu xuất", "Khách hàng", "Nhân viên xuất", "Thời gian", "Tổng tiền", "Trạng thái"});
         cbbFilter.setPreferredSize(new Dimension(100, 25));
 
         txtSearch = new JTextField();
@@ -135,11 +313,25 @@ public class PhieuXuat extends JPanel {
 
         btnRefresh.addActionListener(e -> {
             txtSearch.setText("");
-            loadData();
             table.setRowSorter(null);
         });
 
+        txtSearch.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                filterData();
+            }
 
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                filterData();
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                filterData();
+            }
+        });
 
         return searchPanel;
     }
@@ -149,7 +341,6 @@ public class PhieuXuat extends JPanel {
         leftPanel.setBackground(backgroundColor);
         leftPanel.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
         leftPanel.setPreferredSize(new Dimension(250, 0));
-
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(5, 5, 5, 5);
         gbc.fill = GridBagConstraints.HORIZONTAL;
@@ -166,7 +357,15 @@ public class PhieuXuat extends JPanel {
         leftPanel.add(lblCustomer, gbc);
 
         gbc.gridy++;
-        JComboBox<String> cbbCustomer = new JComboBox<>(new String[]{"Tất cả"});
+        // Tạo danh sách khách hàng từ DaoKH
+        DaoKH daoKH = new DaoKH();
+        List<KhachHangDTO> khachHangList = daoKH.layDanhSachKhachHang();
+        List<String> customerOptions = new ArrayList<>();
+        customerOptions.add("Tất cả");
+        for (KhachHangDTO kh : khachHangList) {
+            customerOptions.add(kh.getMaKH());
+        }
+        cbbCustomer = new JComboBox<>(customerOptions.toArray(new String[0]));
         cbbCustomer.setPreferredSize(new Dimension(200, 35));
         leftPanel.add(cbbCustomer, gbc);
 
@@ -175,7 +374,14 @@ public class PhieuXuat extends JPanel {
         leftPanel.add(lblEmployee, gbc);
 
         gbc.gridy++;
-        JComboBox<String> cbbEmployee = new JComboBox<>(new String[]{"Tất cả"});
+        List<String> employeeOptions = new ArrayList<>();
+        DaoAccount daoAccount =new DaoAccount();
+        List<Account>nhanVienList=daoAccount.layDanhSachAccountFull();
+        employeeOptions.add("Tất cả");
+        for (Account nv : nhanVienList) {
+            employeeOptions.add(nv.getUsername());
+        }
+        cbbEmployee = new JComboBox<>(employeeOptions.toArray(new String[0]));
         cbbEmployee.setPreferredSize(new Dimension(200, 35));
         leftPanel.add(cbbEmployee, gbc);
 
@@ -192,7 +398,7 @@ public class PhieuXuat extends JPanel {
         leftPanel.add(lblFromAmount, gbc);
 
         gbc.gridy++;
-        JTextField txtFromAmount = new JTextField();
+        txtFromAmount = new JTextField();
         txtFromAmount.setPreferredSize(new Dimension(200, 35));
         leftPanel.add(txtFromAmount, gbc);
 
@@ -201,14 +407,36 @@ public class PhieuXuat extends JPanel {
         leftPanel.add(lblToAmount, gbc);
 
         gbc.gridy++;
-        JTextField txtToAmount = new JTextField();
+        txtToAmount = new JTextField();
         txtToAmount.setPreferredSize(new Dimension(200, 35));
         leftPanel.add(txtToAmount, gbc);
+
+        // Add listeners to trigger filtering when left panel components change
+        cbbCustomer.addActionListener(e -> filterData());
+        cbbEmployee.addActionListener(e -> filterData());
+        txtFromAmount.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) { filterData(); }
+            @Override
+            public void removeUpdate(DocumentEvent e) { filterData(); }
+            @Override
+            public void changedUpdate(DocumentEvent e) { filterData(); }
+        });
+        txtToAmount.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) { filterData(); }
+            @Override
+            public void removeUpdate(DocumentEvent e) { filterData(); }
+            @Override
+            public void changedUpdate(DocumentEvent e) { filterData(); }
+        });
+        dateStart.addPropertyChangeListener("date", e -> filterData());
+        dateEnd.addPropertyChangeListener("date", e -> filterData());
 
         return leftPanel;
     }
 
-    private void loadTableData(DefaultTableModel model) {
+    public void loadTableData(DefaultTableModel model) {
         try {
             PhieuXuatRepo repo = new DaoPhieuXuat();
             List<PXDTO> danhSach = repo.layDanhSachPhieuXuat();
@@ -221,7 +449,6 @@ public class PhieuXuat extends JPanel {
 
             for (PXDTO px : danhSach) {
                 model.addRow(new Object[]{
-                        px.getSTT(),
                         px.getMaPX(),
                         px.getMaKhachHang(),
                         px.getMaNhanVien(),
@@ -251,7 +478,7 @@ public class PhieuXuat extends JPanel {
         tablePanel.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
 
         // Columns
-        String[] columns = {"STT", "Mã phiếu xuất", "Khách hàng", "Nhân viên xuất", "Thời gian", "Tổng tiền", "Trạng thái"};
+        String[] columns = {"Mã phiếu xuất", "Khách hàng", "Nhân viên xuất", "Thời gian", "Tổng tiền", "Trạng thái"};
 
         // Tạo model với 0 row ban đầu
         tableModel = new DefaultTableModel(columns, 0) {
@@ -271,65 +498,87 @@ public class PhieuXuat extends JPanel {
     }
 
     private void filterData() {
-        String searchText = txtSearch.getText().toLowerCase();
-        String selectedFilter = (String) cbbFilter.getSelectedItem();
         TableRowSorter<TableModel> sorter = new TableRowSorter<>(table.getModel());
         table.setRowSorter(sorter);
 
-        if (searchText.isEmpty()) {
+        List<RowFilter<TableModel, Object>> filters = new ArrayList<>();
+
+        // 1. Text search filter
+        String searchText = txtSearch.getText().trim().toLowerCase();
+        String selectedFilter = (String) cbbFilter.getSelectedItem();
+        if (!searchText.isEmpty()) {
+            int[] columnIndices;
+            if ("Tất cả".equals(selectedFilter)) {
+                columnIndices = new int[]{0, 1, 2, 3, 4, 5};
+            } else {
+                int columnIndex = switch (selectedFilter) {
+                    case "Mã phiếu xuất" -> 0;
+                    case "Khách hàng" -> 1;
+                    case "Nhân viên xuất" -> 2;
+                    case "Thời gian" -> 3;
+                    case "Tổng tiền" -> 4;
+                    case "Trạng thái" -> 5;
+                    default -> 0;
+                };
+                columnIndices = new int[]{columnIndex};
+            }
+            filters.add(RowFilter.regexFilter("(?i)" + Pattern.quote(searchText), columnIndices));
+        }
+
+        // 2. Customer filter
+        String selectedCustomerName = (String) cbbCustomer.getSelectedItem();
+        if (!"Tất cả".equals(selectedCustomerName)) {
+            filters.add(RowFilter.regexFilter("^" + Pattern.quote(selectedCustomerName) + "$", 1));
+        }
+
+        // 3. Employee filter
+        String selectedEmployee = (String) cbbEmployee.getSelectedItem();
+        if (!"Tất cả".equals(selectedEmployee)) {
+            filters.add(RowFilter.regexFilter("^" + Pattern.quote(selectedEmployee) + "$", 2));
+        }
+
+
+        // 4. Date range filter
+        LocalDateTime startDate = null;
+        LocalDateTime endDate = null;
+
+
+
+        // 5. Amount range filter
+        String fromAmountStr = txtFromAmount.getText().trim();
+        String toAmountStr = txtToAmount.getText().trim();
+        if (!fromAmountStr.isEmpty() || !toAmountStr.isEmpty()) {
+            filters.add(new RowFilter<>() {
+                @Override
+                public boolean include(Entry<? extends TableModel, ? extends Object> entry) {
+                    String amountStr = (String) entry.getValue(4); // Tổng tiền column
+                    try {
+                        double amount = Double.parseDouble(amountStr.replace(",", ""));
+                        if (!fromAmountStr.isEmpty()) {
+                            double fromAmount = Double.parseDouble(fromAmountStr);
+                            if (amount < fromAmount) {
+                                return false;
+                            }
+                        }
+                        if (!toAmountStr.isEmpty()) {
+                            double toAmount = Double.parseDouble(toAmountStr);
+                            if (amount > toAmount) {
+                                return false;
+                            }
+                        }
+                        return true;
+                    } catch (NumberFormatException e) {
+                        return false;
+                    }
+                }
+            });
+        }
+
+        // Combine all filters
+        if (filters.isEmpty()) {
             sorter.setRowFilter(null);
-            return;
-        }
-
-        int[] columnIndices;
-        if ("Tất cả".equals(selectedFilter)) {
-            columnIndices = new int[]{0, 1, 2, 3, 4};
         } else {
-            int columnIndex = switch (selectedFilter) {
-                case "Mã phiếu xuất" -> 1;
-                case "Khách hàng" -> 2;
-                case "Nhân viên" -> 3;
-                default -> 0;
-            };
-            columnIndices = new int[]{columnIndex};
+            sorter.setRowFilter(RowFilter.andFilter(filters));
         }
-
-        RowFilter<TableModel, Object> rf = RowFilter.regexFilter("(?i)" + searchText, columnIndices);
-        sorter.setRowFilter(rf);
-    }
-
-    private void loadData() {
-        loadTableData(tableModel);
-        System.out.println("Dữ liệu đã được làm mới.");
-    }
-
-    public void addPhieuXuat(String maPX, String maKhachHang, String maNhanVien, float tongTien) {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
-        LocalDateTime currentDate = LocalDateTime.now();
-        DecimalFormat df = new DecimalFormat("#,###");
-        int stt = table.getRowCount() + 1;
-
-        // Tạo một PXDTO mới
-        PXDTO entry = new PXDTO(
-                stt,
-                maPX,
-                maKhachHang,
-                maNhanVien,
-                currentDate,
-                tongTien,
-                "Chưa duyệt"
-        );
-
-        // Thêm vào danh sách và bảng
-        exportEntries.add(entry);
-        tableModel.addRow(new Object[]{
-                entry.getSTT(),
-                entry.getMaPX(),
-                entry.getMaKhachHang(),
-                entry.getMaNhanVien(),
-                entry.getThoiGian().format(formatter),
-                df.format(entry.getTongTien()),
-                entry.getTrangThai()
-        });
     }
 }

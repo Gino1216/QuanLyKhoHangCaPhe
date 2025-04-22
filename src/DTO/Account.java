@@ -8,6 +8,9 @@ package DTO;
  *
  * @author hjepr
  */
+
+import Config.Session;
+
 public class Account {
 
     private String MaNV;
@@ -15,31 +18,38 @@ public class Account {
     private String password;
     private int role; // 1: admin, 0: user
 
-
     // Constructor
-
-    public Account(){
-
+    public Account() {
     }
+
     public Account(String username, String password, int role) {
         this.username = username;
         this.password = password;
         this.role = role;
+        saveToSession(); // Lưu tự động vào Session
     }
 
     public Account(String maNV, int role, String username, String password) {
-        MaNV = maNV;
+        this.MaNV = maNV;
         this.username = username;
         this.password = password;
         this.role = role;
+        saveToSession(); // Lưu tự động vào Session
     }
 
+    // Phương thức lưu tự động vào Session
+    private void saveToSession() {
+        Session.setUsername(this.username);
+        Session.setRole(this.role);
+    }
+
+    // Getter và Setter
     public String getMaNV() {
         return MaNV;
     }
 
     public void setMaNV(String maNV) {
-        MaNV = maNV;
+        this.MaNV = maNV;
     }
 
     public String getUsername() {
@@ -48,6 +58,7 @@ public class Account {
 
     public void setUsername(String username) {
         this.username = username;
+        saveToSession(); // Cập nhật Session khi thay đổi username
     }
 
     public String getPassword() {
@@ -64,5 +75,6 @@ public class Account {
 
     public void setRole(int role) {
         this.role = role;
+        saveToSession(); // Cập nhật Session khi thay đổi role
     }
 }

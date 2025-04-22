@@ -9,11 +9,13 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
+
+
 public class DaoChiTietPhieuXuat implements ChiTietPhieuXuatRepo {
 
     @Override
     public void themChiTietPhieuXuat(ChiTietPhieuXuatDTO ct) {
-        String sql = "INSERT INTO chitietpx (MaPX, MaSP, SanPham, SoLuong, DonGia, ThanhTien) VALUES (?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO chitietpx (MaPX, MaSP, TenSP, SoLuong, DonGia, ThanhTien) VALUES (?, ?, ?, ?, ?, ?)";
         try (Connection conn = Mysql.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, ct.getMaPX());
@@ -23,7 +25,6 @@ public class DaoChiTietPhieuXuat implements ChiTietPhieuXuatRepo {
             stmt.setFloat(5, ct.getDonGia());
             stmt.setFloat(6, ct.getThanhTien());
             stmt.executeUpdate();
-            JOptionPane.showMessageDialog(null, "Thêm chi tiết phiếu xuất thành công!");
         } catch (SQLException e) {
             JOptionPane.showMessageDialog(null, "Lỗi khi thêm chi tiết PX: " + e.getMessage(),
                     "Lỗi", JOptionPane.ERROR_MESSAGE);
@@ -32,7 +33,7 @@ public class DaoChiTietPhieuXuat implements ChiTietPhieuXuatRepo {
 
     @Override
     public boolean suaChiTietPhieuXuat(ChiTietPhieuXuatDTO ct) {
-        String sql = "UPDATE chitietpx SET SanPham = ?, SoLuong = ?, DonGia = ?, ThanhTien = ? WHERE MaPX = ? AND MaSP = ?";
+        String sql = "UPDATE chitietpx SET TenSP = ?, SoLuong = ?, DonGia = ?, ThanhTien = ? WHERE MaPX = ? AND MaSP = ?";
         try (Connection conn = Mysql.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, ct.getSanPham());
@@ -52,6 +53,15 @@ public class DaoChiTietPhieuXuat implements ChiTietPhieuXuatRepo {
         }
         return false;
     }
+
+
+
+
+
+
+
+
+
 
     @Override
     public boolean xoaChiTietPhieuXuat(String maPX, String maSP) {
@@ -84,7 +94,7 @@ public class DaoChiTietPhieuXuat implements ChiTietPhieuXuatRepo {
                     ChiTietPhieuXuatDTO ct = new ChiTietPhieuXuatDTO(
                             rs.getString("MaPX"),
                             rs.getString("MaSP"),
-                            rs.getString("SanPham"),
+                            rs.getString("TenSP"),
                             rs.getInt("SoLuong"),
                             rs.getFloat("DonGia"),
                             rs.getFloat("ThanhTien")
@@ -94,6 +104,33 @@ public class DaoChiTietPhieuXuat implements ChiTietPhieuXuatRepo {
             }
         } catch (SQLException e) {
             JOptionPane.showMessageDialog(null, "Lỗi khi lấy chi tiết PX: " + e.getMessage(),
+                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
+        return list;
+    }
+
+    // Thêm phương thức mới để lấy thông tin chi tiết phiếu xuất theo mã PX và trạng thái hoàn thành
+    public List<ChiTietPhieuXuatDTO> layChiTietPhieuXuatHoanThanhTheoMaPX(String maPX) {
+        List<ChiTietPhieuXuatDTO> list = new ArrayList<>();
+        String sql = "SELECT c.* FROM chitietpx c JOIN phieuxuat p ON c.MaPX = p.MaPX WHERE c.MaPX = ?";
+        try (Connection conn = Mysql.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, maPX);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    ChiTietPhieuXuatDTO ct = new ChiTietPhieuXuatDTO(
+                            rs.getString("MaPX"),
+                            rs.getString("MaSP"),
+                            rs.getString("TenSP"),
+                            rs.getInt("SoLuong"),
+                            rs.getFloat("DonGia"),
+                            rs.getFloat("ThanhTien")
+                    );
+                    list.add(ct);
+                }
+            }
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(null, "Lỗi khi lấy chi tiết PX hoàn thành: " + e.getMessage(),
                     "Lỗi", JOptionPane.ERROR_MESSAGE);
         }
         return list;
@@ -117,4 +154,7 @@ public class DaoChiTietPhieuXuat implements ChiTietPhieuXuatRepo {
         }
         return false;
     }
+
+
+
 }

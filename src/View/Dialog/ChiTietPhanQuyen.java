@@ -1,12 +1,12 @@
 /*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ * Click nbproject://SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbproject://SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
 package View.Dialog;
 
+import PDF.PDFExporter;
 import com.formdev.flatlaf.FlatLightLaf;
 import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 
 /**
@@ -17,8 +17,8 @@ public class ChiTietPhanQuyen extends JDialog {
 
     private Color backgroundColor = new Color(255, 255, 255);
     private Color headerColor = new Color(0, 102, 204);
-    private Color buttonColor = new Color(0, 120, 215); // Màu xanh dương giống hình ảnh
-    private Color cancelButtonColor = new Color(255, 69, 58); // Màu đỏ giống hình ảnh
+    private Color buttonColor = new Color(0, 120, 215);
+    private Color cancelButtonColor = new Color(255, 69, 58);
 
     public ChiTietPhanQuyen(int permissionId, String roleName) {
         FlatLightLaf.setup();
@@ -81,8 +81,10 @@ public class ChiTietPhanQuyen extends JDialog {
         btnExportPDF.setPreferredSize(new Dimension(180, 50));
         btnExportPDF.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
         btnExportPDF.addActionListener(e -> {
-            JOptionPane.showMessageDialog(this, "Chức năng xuất file PDF chưa được triển khai!",
-                    "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+            String[] labelsPDF = {"Mã phân quyền:", "Tên quyền:"};
+            String[] valuesPDF = {String.valueOf(permissionId), roleName};
+            PDFExporter exporter = new PDFExporter();
+            exporter.exportToPDF(this, "CHI TIẾT PHÂN QUYỀN", labelsPDF, valuesPDF, "E:/ChiTietPhanQuyen_" + permissionId + ".pdf");
         });
 
         JButton btnCancel = new JButton("Hủy bỏ");

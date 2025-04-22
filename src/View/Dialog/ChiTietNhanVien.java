@@ -1,9 +1,10 @@
 /*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ * Click nbproject://SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbproject://SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
 package View.Dialog;
 
+import PDF.PDFExporter;
 import com.formdev.flatlaf.FlatLightLaf;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
@@ -22,8 +23,9 @@ public class ChiTietNhanVien extends JDialog {
     private Color cancelButtonColor = new Color(239, 68, 68);
     private Color buttonHoverColor = new Color(100, 149, 237);
     private Color cancelHoverColor = new Color(248, 113, 113);
+    String[] labels = {"Mã Nhân Viên", "Họ Tên", "Giới Tính", "Ngày Sinh", "Địa Chỉ", "Email", "Số Điện Thoại", "Chức Vụ"};
 
-    public ChiTietNhanVien(String id, String name, String gender, String birthDate, String phone, String email,String address,String chucvu) {
+    public ChiTietNhanVien(String id, String name, String gender, String birthDate, String phone, String email, String address, String chucvu) {
         FlatLightLaf.setup();
         setTitle("Chi Tiết Nhân Viên");
         setSize(1200, 800);
@@ -50,9 +52,7 @@ public class ChiTietNhanVien extends JDialog {
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.anchor = GridBagConstraints.WEST;
 
-        String[] labels = {"Mã Nhân Viên", "Họ Tên", "Giới Tính", "Ngày Sinh", "Địa Chỉ", "Email", "Số Điện Thoại", "Chức Vụ"};
-
-        String[] values = {id, name, gender, birthDate,address,email,phone,chucvu};
+        String[] values = {id, name, gender, birthDate, phone, email, address, chucvu};
 
         for (int i = 0; i < labels.length; i++) {
             JLabel label = new JLabel(labels[i]);
@@ -96,8 +96,10 @@ public class ChiTietNhanVien extends JDialog {
             }
         });
         btnExportPDF.addActionListener(e -> {
-            JOptionPane.showMessageDialog(this, "Chức năng xuất file PDF chưa được triển khai!",
-                    "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+            String[] labelsPDF = {"Mã Nhân Viên:", "Họ Tên:", "Giới Tính:", "Ngày Sinh:", "Địa Chỉ:", "Email:", "Số Điện Thoại:", "Chức Vụ:"};
+            String[] valuesPDF = {id, name, gender, birthDate, address, email, phone, chucvu};
+            PDFExporter exporter = new PDFExporter();
+            exporter.exportToPDF(this, "CHI TIẾT NHÂN VIÊN", labelsPDF, valuesPDF, "E:/ChiTietNhanVien_" + id + ".pdf");
         });
 
         JButton btnCancel = new JButton("Hủy bỏ");

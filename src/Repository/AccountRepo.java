@@ -20,5 +20,8 @@ public interface AccountRepo {
 
     List<Account> layDanhSachAccount();
 
+    void xuatExcel(String filePath);
+
+
 
 }

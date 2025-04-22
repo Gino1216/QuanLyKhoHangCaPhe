@@ -3,7 +3,6 @@ package DTO;
 import java.time.LocalDateTime;
 
 public class PXDTO {
-    private int STT;
     private String MaPX;
     private String maKhachHang;
     private String maNhanVien;
@@ -15,8 +14,7 @@ public class PXDTO {
 
     }
 
-    public PXDTO(int STT, String MaPX, String maKhachHang, String maNhanVien, LocalDateTime thoiGian, float tongTien, String trangThai) {
-        this.STT = STT;
+    public PXDTO( String MaPX, String maKhachHang, String maNhanVien, LocalDateTime thoiGian, float tongTien, String trangThai) {
         this.MaPX = MaPX;
         this.maKhachHang = maKhachHang;
         this.maNhanVien = maNhanVien;
@@ -25,13 +23,7 @@ public class PXDTO {
         this.trangThai = trangThai;
     }
 
-    public int getSTT() {
-        return STT;
-    }
 
-    public void setSTT(int STT) {
-        this.STT = STT;
-    }
 
     public String getMaPX() {
         return MaPX;

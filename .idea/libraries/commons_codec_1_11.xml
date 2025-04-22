@@ -1,0 +1,15 @@
+<component name="libraryTable">
+  <library name="commons-codec-1.11">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/../poi_chaytot/poi_chaytot/thuvienpoi/commons-codec-1.11.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../poi_chaytot/poi_chaytot/thuvienpoi/commons-collections4-4.2.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../poi_chaytot/poi_chaytot/thuvienpoi/commons-compress-1.18.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../poi_chaytot/poi_chaytot/thuvienpoi/poi-4.0.1.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../poi_chaytot/poi_chaytot/thuvienpoi/poi-ooxml-4.0.1.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../poi_chaytot/poi_chaytot/thuvienpoi/poi-ooxml-schemas-4.0.1.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../poi_chaytot/poi_chaytot/thuvienpoi/xmlbeans-3.0.2.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

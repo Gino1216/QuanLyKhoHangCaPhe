@@ -3,8 +3,11 @@ package Dao;
 import Config.Mysql;
 import DTO.SanPhamDTO;
 import Repository.SanPhamRepo;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import javax.swing.*;
+import java.io.FileOutputStream;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -32,10 +35,9 @@ public class DaoSP implements SanPhamRepo {
         }
     }
 
-
     @Override
     public boolean suaSanPham(SanPhamDTO sp) {
-        String sql = "UPDATE sanpham SET TenSP = ?, SoLuong = ?, TinhTrang = ?,HanSD=?, GiaNhap = ?,GiaXuat=? WHERE MaSP = ?";
+        String sql = "UPDATE sanpham SET TenSP = ?, SoLuong = ?, TinhTrang = ?, HanSD = ?, GiaNhap = ?, GiaXuat = ? WHERE MaSP = ?";
         try (Connection conn = Mysql.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
@@ -43,8 +45,8 @@ public class DaoSP implements SanPhamRepo {
             stmt.setInt(2, sp.getSoLuong());
             stmt.setString(3, sp.getTinhTrang());
             stmt.setString(4, sp.getHanSD());
-            stmt.setFloat(5, sp.getGiaNhap()); // sửa đúng kiểu float
-            stmt.setFloat(6, sp.getGiaXuat()); // sửa đúng kiểu float
+            stmt.setFloat(5, sp.getGiaNhap());
+            stmt.setFloat(6, sp.getGiaXuat());
             stmt.setString(7, sp.getMaSP());
 
             int rowsAffected = stmt.executeUpdate();
@@ -106,8 +108,9 @@ public class DaoSP implements SanPhamRepo {
                     sp.setTenSP(rs.getString("TenSP"));
                     sp.setSoLuong(rs.getInt("SoLuong"));
                     sp.setTinhTrang(rs.getString("TinhTrang"));
-                    sp.setGiaNhap(rs.getFloat("GiaNhap")); // sửa đúng kiểu float
-                    sp.setGiaXuat(rs.getFloat("GiaXuat")); // sửa đúng kiểu float
+                    sp.setHanSD(rs.getString("HanSD"));
+                    sp.setGiaNhap(rs.getFloat("GiaNhap"));
+                    sp.setGiaXuat(rs.getFloat("GiaXuat"));
                     result.add(sp);
                 }
             }
@@ -134,10 +137,8 @@ public class DaoSP implements SanPhamRepo {
                 sanPhamDTO.setSoLuong(rs.getInt("SoLuong"));
                 sanPhamDTO.setTinhTrang(rs.getString("TinhTrang"));
                 sanPhamDTO.setHanSD(rs.getString("HanSD"));
-                sanPhamDTO.setGiaNhap(rs.getFloat("GiaNhap")); // sửa đúng kiểu float
-                sanPhamDTO.setGiaXuat(rs.getFloat("GiaXuat")); // sửa đúng kiểu float
-
-
+                sanPhamDTO.setGiaNhap(rs.getFloat("GiaNhap"));
+                sanPhamDTO.setGiaXuat(rs.getFloat("GiaXuat"));
                 result.add(sanPhamDTO);
             }
 
@@ -164,6 +165,72 @@ public class DaoSP implements SanPhamRepo {
             e.printStackTrace();
             return false;
         }
+    }
+
+    @Override
+    public void xuatExcel(String filePath) {
+        // Lấy danh sách sản phẩm
+        List<SanPhamDTO> sanPhamList = layDanhSachSanPham();
+
+        // Tạo workbook mới
+        Workbook workbook = new XSSFWorkbook();
+        Sheet sheet = workbook.createSheet("DanhSachSanPham");
+
+        // Tạo dòng tiêu đề
+        Row headerRow = sheet.createRow(0);
+        String[] columns = {"Mã SP", "Tên SP", "Số Lượng", "Tình Trạng", "Hạn SD", "Giá Nhập", "Giá Xuất"};
+        for (int i = 0; i < columns.length; i++) {
+            Cell cell = headerRow.createCell(i);
+            cell.setCellValue(columns[i]);
+        }
+
+        // Điền dữ liệu
+        int rowNum = 1;
+        for (SanPhamDTO sp : sanPhamList) {
+            Row row = sheet.createRow(rowNum++);
+            row.createCell(0).setCellValue(sp.getMaSP());
+            row.createCell(1).setCellValue(sp.getTenSP());
+            row.createCell(2).setCellValue(sp.getSoLuong());
+            row.createCell(3).setCellValue(sp.getTinhTrang());
+            row.createCell(4).setCellValue(sp.getHanSD());
+            row.createCell(5).setCellValue(sp.getGiaNhap());
+            row.createCell(6).setCellValue(sp.getGiaXuat());
+        }
+
+        // Tự động điều chỉnh kích thước cột
+        for (int i = 0; i < columns.length; i++) {
+            sheet.autoSizeColumn(i);
+        }
+
+        // Ghi file
+        try (FileOutputStream fileOut = new FileOutputStream(filePath)) {
+            workbook.write(fileOut);
+            JOptionPane.showMessageDialog(null, "Xuất file Excel thành công tại: " + filePath, "Thành công", JOptionPane.INFORMATION_MESSAGE);
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, "Lỗi khi xuất file Excel: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        } finally {
+            try {
+                workbook.close();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    @Override
+    public int demSoLuongSanPham() {
+        int count = 0;
+        try (Connection conn = Mysql.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery("SELECT COUNT(*) FROM sanpham")) {
+            if (rs.next()) {
+                count = rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return count;
     }
 
 }

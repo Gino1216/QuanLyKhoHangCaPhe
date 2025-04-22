@@ -20,4 +20,7 @@ public interface NhanVienRepo {
     boolean kiemTraMaNVTonTai(String maNV);
 
     NhanVienDTO layNhanVienTheoMaNV(String maNV);
+
+    void xuatExcel(String filePath);
+
 }

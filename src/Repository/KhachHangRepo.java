@@ -17,4 +17,7 @@ public interface KhachHangRepo {
     List<KhachHangDTO> layDanhSachKhachHang();
 
     boolean kiemTraMaKHTonTai(String maKH);
+
+    void xuatExcel(String filePath);
+
 }

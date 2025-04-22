@@ -1,17 +1,11 @@
 package View;
 
-import DTO.NhaCungCapDTO;
 import DTO.NhanVienDTO;
-import DTO.SanPhamDTO;
-import Dao.DaoNCC;
 import Dao.DaoNV;
-import Dao.DaoSP;
+import EX.ExNhanVien;
 import Gui.MainFunction;
-import Repository.NCCRepo;
 import Repository.NhanVienRepo;
-import Repository.SanPhamRepo;
 import View.Dialog.ChiTietNhanVien;
-import View.Dialog.ChiTietSanPham;
 import com.formdev.flatlaf.FlatLightLaf;
 
 import javax.swing.*;
@@ -59,6 +53,13 @@ public class NhanVien extends JPanel {
         setBackground(backgroundColor);
     }
 
+    private void exportToExcel() {
+        ExNhanVien.exportNhanVienToExcel("E:/DanhSachNhanVien.xlsx"); // Dùng / thay cho \\
+    }
+
+
+
+
     // Method to create top panel (includes function bar and search panel)
     private JPanel createTopPanel() {
         JPanel topPanel = new JPanel(new BorderLayout());
@@ -78,6 +79,8 @@ public class NhanVien extends JPanel {
         functionBar.setButtonActionListener("update", this::showEditEmployeeDialog);
         functionBar.setButtonActionListener("delete", this::DeleteEmploy);
         functionBar.setButtonActionListener("detail", this::showEmployeeDetails);
+        functionBar.setButtonActionListener("export", this::exportToExcel);
+
 
 
 
@@ -364,11 +367,7 @@ public class NhanVien extends JPanel {
         buttonPanel.add(btnCancel);
         dialog.add(buttonPanel, BorderLayout.SOUTH);
 
-        // Phím tắt
-        dialog.getRootPane().setDefaultButton(btnAdd); // Enter để thêm
-        dialog.getRootPane().registerKeyboardAction(e -> dialog.dispose(),
-                KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0),
-                JComponent.WHEN_IN_FOCUSED_WINDOW); // Esc để hủy
+
 
         dialog.setVisible(true);
     }
@@ -602,7 +601,7 @@ public class NhanVien extends JPanel {
         JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 0));
         searchPanel.setBackground(backgroundColor);
 
-        cbbFilter = new JComboBox<>(new String[]{"Tất cả", "Mã Nhân Viên", "Họ Tên", "Số Điện Thoại", "Email", "Địa Chỉ", "Ngày Sinh", "Giới Tính", "Chức Vụ"});
+        cbbFilter = new JComboBox<>(new String[]{"Tất cả","Mã Nhân Viên", "Họ Tên","Giới Tính","Ngày Sinh","Địa Chỉ", "Email",  "Số Điện Thoại","Chức Vụ" });
         cbbFilter.setPreferredSize(new Dimension(100, 25));
 
         txtSearch = new JTextField();
@@ -624,7 +623,6 @@ public class NhanVien extends JPanel {
 
         btnRefresh.addActionListener(e -> {
             txtSearch.setText("");
-            loadData();
             table.setRowSorter(null);
         });
 
@@ -722,13 +720,18 @@ public class NhanVien extends JPanel {
 
         int[] columnIndices;
         if ("Tất cả".equals(selectedFilter)) {
-            columnIndices = new int[]{1, 2, 3, 4, 5}; // Bỏ cột MNV
+            columnIndices = new int[]{0, 1, 2, 3, 4, 5, 6, 7};
         } else {
             int columnIndex = switch (selectedFilter) {
+                case "Mã nhân viên" -> 0;
                 case "Họ tên" -> 1;
                 case "Giới tính" -> 2;
+                case "Ngày sinh" -> 3;
+                case "Địa chỉ" -> 4;
                 case "Email" -> 5;
-                default -> 1;
+                case "Số điện thoại" -> 6;
+                case "Chức vụ" -> 7;
+                default -> 0;
             };
             columnIndices = new int[]{columnIndex};
         }
@@ -737,44 +740,6 @@ public class NhanVien extends JPanel {
         sorter.setRowFilter(rf);
     }
 
-    private void loadData() {
-        if (tableModel == null) {
-            tableModel = new DefaultTableModel(
-                    new String[]{"Mã Nhân Viên", "Họ Tên", "Giới Tính", "Ngày Sinh", "Địa Chỉ", "Email", "Số Điện Thoại", "Chức Vụ"}, 0
-            );
-            table.setModel(tableModel);
-        } else {
-            // Đảm bảo có cột nếu tableModel đã tồn tại mà bị xóa cột trước đó
-            if (tableModel.getColumnCount() == 0) {
-                tableModel.setColumnIdentifiers(new String[]{"Mã Nhân Viên", "Họ Tên", "Giới Tính", "Ngày Sinh", "Địa Chỉ", "Email", "Số Điện Thoại", "Chức Vụ"});
-            }
-        }
-
-        tableModel.setRowCount(0); // Xóa dữ liệu cũ
-
-        try {
-            NhanVienRepo repo =new DaoNV();
-            List<NhanVienDTO> danhSach = repo.layDanhSachNhanVien();
-
-            for (NhanVienDTO nv : danhSach) {
-                tableModel.addRow(new Object[]{
-                        nv.getMaNV(),
-                        nv.getHoTen(),
-                        nv.getGioiTinh(),
-                        nv.getNgaySinh(),
-                        nv.getDiaChi(),
-                        nv.getEmail(),
-                        nv.getSoDT(),
-                        nv.getChucVu()
-                });
-            }
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Lỗi khi tải dữ liệu: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
-            ex.printStackTrace();
-        }
-    }
-
-
     private void showEmployeeDetails() {
         int selectedRow = table.getSelectedRow();
         if (selectedRow == -1) {
@@ -782,18 +747,19 @@ public class NhanVien extends JPanel {
             return;
         }
 
+
         int modelRow = table.convertRowIndexToModel(selectedRow);
         String id = table.getValueAt(modelRow, 0).toString();
         String name = table.getValueAt(modelRow, 1).toString();
         String gender = table.getValueAt(modelRow, 2).toString();
         String birthDate = table.getValueAt(modelRow, 3).toString();
-        String address =table.getValueAt(modelRow,4).toString();
+        String phone = table.getValueAt(modelRow, 4).toString();
         String email = table.getValueAt(modelRow, 5).toString();
-        String phone = table.getValueAt(modelRow, 6).toString();
+        String address =table.getValueAt(modelRow,6).toString();
         String chucvu =table.getValueAt(modelRow,7).toString();
 
 
-        ChiTietNhanVien detailDialog = new ChiTietNhanVien(id, name, gender, birthDate,address, phone, email,chucvu);
+        ChiTietNhanVien detailDialog = new ChiTietNhanVien(id, name, gender, birthDate, phone, email,address,chucvu);
         detailDialog.setVisible(true);
     }
 

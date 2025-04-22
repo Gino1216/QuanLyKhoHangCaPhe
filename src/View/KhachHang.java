@@ -5,6 +5,8 @@ import DTO.NhaCungCapDTO;
 import Dao.DaoKH;
 import Dao.DaoNCC;
 import Dao.DaoSP;
+import EX.ExKhachHang;
+import EX.ExNhanVien;
 import Gui.InputDate;
 import Gui.MainFunction;
 import Repository.KhachHangRepo;
@@ -56,7 +58,7 @@ public class KhachHang extends JPanel {
         functionBar.setButtonActionListener("delete", this::DeleteCustomer);
         functionBar.setButtonActionListener("detail", this::showCustomerDetails);
         functionBar.setButtonActionListener("import", () -> JOptionPane.showMessageDialog(this, "Chức năng nhập chưa được triển khai!", "Thông báo", JOptionPane.INFORMATION_MESSAGE));
-        functionBar.setButtonActionListener("export", () -> JOptionPane.showMessageDialog(this, "Chức năng xuất chưa được triển khai!", "Thông báo", JOptionPane.INFORMATION_MESSAGE));
+        functionBar.setButtonActionListener("export", this::exportToExcel);
     }
 
     private void showAddCustomerDialog() {
@@ -235,6 +237,10 @@ public class KhachHang extends JPanel {
         dialog.setVisible(true);
     }
 
+
+    private void exportToExcel() {
+        ExKhachHang.exportKhachHangToExcel("E:/DanhSachKhachHang.xlsx");
+    }
     // Helper method để thiết lập placeholder cho text field
     private void setupPlaceholder(JTextField textField, String placeholder) {
         textField.setText(placeholder);
@@ -526,19 +532,6 @@ public class KhachHang extends JPanel {
         dialog.setVisible(true);
 }
 
-    private void deleteCustomer() {
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow == -1) {
-            JOptionPane.showMessageDialog(this, "Vui lòng chọn một khách hàng để xóa!", "Cảnh báo", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-
-        int choice = JOptionPane.showConfirmDialog(this, "Bạn có chắc muốn xóa khách hàng này?", "Xác nhận xóa", JOptionPane.YES_NO_OPTION);
-        if (choice == JOptionPane.YES_OPTION) {
-            tableModel.removeRow(table.convertRowIndexToModel(selectedRow));
-            JOptionPane.showMessageDialog(this, "Xóa khách hàng thành công!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
-        }
-    }
 
     private void showCustomerDetails() {
         int selectedRow = table.getSelectedRow();
@@ -563,7 +556,8 @@ public class KhachHang extends JPanel {
         JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 0));
         searchPanel.setBackground(backgroundColor);
 
-        cbbFilter = new JComboBox<>(new String[]{"Tất cả", "Tên khách hàng", "Địa chỉ", "Số điện thoại", "Email"});
+        cbbFilter = new JComboBox<>(new String[]{"Tất cả", "Mã Khách hàng","Tên khách hàng", "Địa chỉ","Ngày tham gia", "Email", "Số điện thoại"});
+
         cbbFilter.setPreferredSize(new Dimension(100, 25));
 
         txtSearch = new JTextField();
@@ -585,7 +579,6 @@ public class KhachHang extends JPanel {
 
         btnRefresh.addActionListener(e -> {
             txtSearch.setText("");
-            loadData();
             table.setRowSorter(null);
         });
 
@@ -646,6 +639,7 @@ public class KhachHang extends JPanel {
 
         return new JScrollPane(table);
     }
+
     private void loadTableData(DefaultTableModel model) {
         try {
             KhachHangRepo repo=new DaoKH();
@@ -670,72 +664,35 @@ public class KhachHang extends JPanel {
 
 
     private void filterData() {
-        String searchText = txtSearch.getText().toLowerCase();
-        String selectedFilter = (String) cbbFilter.getSelectedItem();
-        TableRowSorter<TableModel> sorter = new TableRowSorter<>(table.getModel());
-        table.setRowSorter(sorter);
+        String searchText = txtSearch.getText().toLowerCase(); // Lấy dữ liệu tìm kiếm và chuyển thành chữ thường
+        String selectedFilter = (String) cbbFilter.getSelectedItem(); // Lấy giá trị của filter
+        TableRowSorter<TableModel> sorter = new TableRowSorter<>(table.getModel()); // Khởi tạo TableRowSorter
+        table.setRowSorter(sorter); // Gắn sorter vào table
 
         if (searchText.isEmpty()) {
-            sorter.setRowFilter(null);
+            sorter.setRowFilter(null); // Nếu không có từ khóa tìm kiếm, bỏ lọc
             return;
         }
 
         int[] columnIndices;
         if ("Tất cả".equals(selectedFilter)) {
-            columnIndices = new int[]{1, 2, 4, 5};
+            columnIndices = new int[]{0, 1, 2, 3, 4, 5};
         } else {
             int columnIndex = switch (selectedFilter) {
-                case "Tên khách hàng" ->
-                        1;
-                case "Địa chỉ" ->
-                        2;
-                case "Số điện thoại" ->
-                        5;
-                case "Email" ->
-                        4;
-                default ->
-                        1;
+                case "Mã Khách hàng" -> 0;
+                case "Tên khách hàng" -> 1;
+                case "Địa chỉ" -> 2;
+                case "Ngày tham gia" -> 3;
+                case "Email" -> 4;
+                case "Số điện thoại" -> 5;
+                default -> 0;
             };
-            columnIndices = new int[]{columnIndex};
+            columnIndices = new int[]{columnIndex}; // Lọc theo cột đã chọn
         }
 
+        // Cài đặt bộ lọc với regex không phân biệt chữ hoa chữ thường
         RowFilter<TableModel, Object> rf = RowFilter.regexFilter("(?i)" + searchText, columnIndices);
-        sorter.setRowFilter(rf);
-    }
-
-    private void loadData() {
-        if (tableModel == null) {
-            tableModel = new DefaultTableModel(
-                    new String[]{"Mã khách hàng", "Tên khách hàng","Địa chỉ", "Ngày tham gia","Email" ,"Số điện thoại"}, 0
-            );
-            table.setModel(tableModel);
-        } else {
-            // Đảm bảo có cột nếu tableModel đã tồn tại mà bị xóa cột trước đó
-            if (tableModel.getColumnCount() == 0) {
-                tableModel.setColumnIdentifiers(new String[]{"Mã khách hàng", "Tên khách hàng","Địa chỉ", "Ngày tham gia","Email" ,"Số điện thoại"});
-            }
-        }
-
-        tableModel.setRowCount(0); // Xóa dữ liệu cũ
-
-        try {
-            KhachHangRepo repo = new DaoKH(); // Đảm bảo tên đúng
-            List<KhachHangDTO> danhSach = repo.layDanhSachKhachHang();
-
-            for (KhachHangDTO kh : danhSach) {
-                tableModel.addRow(new Object[]{
-                        kh.getMaKH(),
-                        kh.getHoTen(),
-                        kh.getDiaChi(),
-                        kh.getNgayThamGia(),
-                        kh.getEmail(),
-                        kh.getSoDT()
-                });
-            }
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Lỗi khi tải dữ liệu: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
-            ex.printStackTrace();
-        }
+        sorter.setRowFilter(rf); // Áp dụng bộ lọc
     }
 
 

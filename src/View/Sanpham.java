@@ -4,19 +4,20 @@
  */
 package View;
 
-import DTO.KhachHangDTO;
 import DTO.SanPhamDTO;
-import Dao.DaoKH;
 import Dao.DaoSP;
 import Gui.MainFunction;
-import Repository.KhachHangRepo;
 import Repository.SanPhamRepo;
 import View.Dialog.ChiTietSanPham;
 import com.formdev.flatlaf.FlatLightLaf;
+import EX.ExSanPham;
+
+
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+
 import java.awt.Font;
 import java.awt.Frame;
 import java.awt.GridBagConstraints;
@@ -24,6 +25,7 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.FileOutputStream;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -104,11 +106,15 @@ public class Sanpham extends JPanel {
         functionBar.setButtonActionListener("update", this::showEditProductDialog);
         functionBar.setButtonActionListener("delete",this::DeleteProduct);
         functionBar.setButtonActionListener("detail",this::showCustomerDetails);
+        functionBar.setButtonActionListener("export", this:: exportToExcel);
 
 
         return topPanel;
     }
 
+    private void exportToExcel() {
+        ExSanPham.exportSanPhamToExcel("E:/DanhSachSanPham.xlsx"); // Dùng / thay cho \\
+    }
 
 
     private void showAddProductDialog() {
@@ -576,6 +582,7 @@ public class Sanpham extends JPanel {
         dialog.add(buttonPanel, BorderLayout.SOUTH);
 
         dialog.setVisible(true);
+        table.setRowSorter(null);
     }
 
 
@@ -607,7 +614,6 @@ public class Sanpham extends JPanel {
         btnRefresh.addActionListener(e -> {
             txtSearch.setText("");
             cbbFilter.setSelectedIndex(0); // Reset về "Tất cả"
-            loadData(); // Hàm này bạn đã có sẵn để load lại bảng
             table.setRowSorter(null);
         });
 
@@ -631,6 +637,52 @@ public class Sanpham extends JPanel {
 
         return searchPanel;
     }
+
+    private void filterData() {
+        String searchText = txtSearch.getText().toLowerCase(); // Lấy dữ liệu tìm kiếm và chuyển thành chữ thường
+        String selectedFilter = (String) cbbFilter.getSelectedItem(); // Lấy giá trị của filter
+        TableRowSorter<TableModel> sorter = new TableRowSorter<>(table.getModel()); // Khởi tạo TableRowSorter
+        table.setRowSorter(sorter); // Gắn sorter vào table
+
+        if (searchText.isEmpty()) {
+            sorter.setRowFilter(null); // Nếu không có từ khóa tìm kiếm, bỏ lọc
+            return;
+        }
+
+        int[] columnIndices;
+        if ("Tất cả".equals(selectedFilter)) {
+            // Nếu chọn "Tất cả", lọc tất cả các cột
+            columnIndices = new int[]{0, 1, 2, 3, 4, 5, 6};
+        } else {
+            // Dùng switch để xác định cột cần lọc dựa vào lựa chọn của người dùng
+            int columnIndex = switch (selectedFilter) {
+                case "Mã SP" -> 0;  // Cột "Mã SP" có chỉ số 0
+                case "Tên sp" -> 1;  // Cột "Tên sp" có chỉ số 1
+                case "Số lượng" -> 2;  // Cột "Số lượng" có chỉ số 2
+                case "Tình trạng" -> 3;  // Cột "Tình trạng" có chỉ số 3
+                case "Hạn sử dụng" -> 4;  // Cột "Hạn sử dụng" có chỉ số 4
+                case "Giá nhập" -> 5;  // Cột "Giá" có chỉ số 5
+                case "Giá xuất" -> 6;  // Cột "Giá" có chỉ số 5
+
+                default -> 0;  // Mặc định lọc theo cột "Mã SP"
+            };
+            columnIndices = new int[]{columnIndex}; // Lọc theo cột đã chọn
+        }
+
+        // Cài đặt bộ lọc với regex không phân biệt chữ hoa chữ thường
+        RowFilter<TableModel, Object> rf = RowFilter.regexFilter("(?i)" + searchText, columnIndices);
+        sorter.setRowFilter(rf); // Áp dụng bộ lọc
+    }
+
+
+
+
+
+
+
+
+
+
 
     private void showCustomerDetails() {
         int selectedRow = table.getSelectedRow();
@@ -716,76 +768,9 @@ public class Sanpham extends JPanel {
         table.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
     }
 
-    private void filterData() {
-        String searchText = txtSearch.getText().toLowerCase(); // Lấy dữ liệu tìm kiếm và chuyển thành chữ thường
-        String selectedFilter = (String) cbbFilter.getSelectedItem(); // Lấy giá trị của filter
-        TableRowSorter<TableModel> sorter = new TableRowSorter<>(table.getModel()); // Khởi tạo TableRowSorter
-        table.setRowSorter(sorter); // Gắn sorter vào table
-
-        if (searchText.isEmpty()) {
-            sorter.setRowFilter(null); // Nếu không có từ khóa tìm kiếm, bỏ lọc
-            return;
-        }
-
-        int[] columnIndices;
-        if ("Tất cả".equals(selectedFilter)) {
-            // Nếu chọn "Tất cả", lọc tất cả các cột
-            columnIndices = new int[]{0, 1, 2, 3, 4, 5, 6};
-        } else {
-            // Dùng switch để xác định cột cần lọc dựa vào lựa chọn của người dùng
-            int columnIndex = switch (selectedFilter) {
-                case "Mã SP" -> 0;  // Cột "Mã SP" có chỉ số 0
-                case "Tên sp" -> 1;  // Cột "Tên sp" có chỉ số 1
-                case "Số lượng" -> 2;  // Cột "Số lượng" có chỉ số 2
-                case "Tình trạng" -> 3;  // Cột "Tình trạng" có chỉ số 3
-                case "Hạn sử dụng" -> 4;  // Cột "Hạn sử dụng" có chỉ số 4
-                case "Giá" -> 5;  // Cột "Giá" có chỉ số 5
-                default -> 0;  // Mặc định lọc theo cột "Mã SP"
-            };
-            columnIndices = new int[]{columnIndex}; // Lọc theo cột đã chọn
-        }
-
-        // Cài đặt bộ lọc với regex không phân biệt chữ hoa chữ thường
-        RowFilter<TableModel, Object> rf = RowFilter.regexFilter("(?i)" + searchText, columnIndices);
-        sorter.setRowFilter(rf); // Áp dụng bộ lọc
-    }
 
 
-    private void loadData() {
-        if (tableModel == null) {
-            tableModel = new DefaultTableModel(
-                    new String[]{"Mã sản phẩm", "Tên sản phẩm", "Số lượng", "Tình trạng", "Hạn sử dụng", "Giá xuất","Giá nhập"}, 0
-            );
-            table.setModel(tableModel);
-        } else {
-            // Đảm bảo có cột nếu tableModel đã tồn tại mà bị xóa cột trước đó
-            if (tableModel.getColumnCount() == 0) {
-                tableModel.setColumnIdentifiers(new String[]{"Mã sản phẩm", "Tên sản phẩm", "Số lượng", "Tình trạng", "Hạn sử dụng", "Giá xuất","Giá nhập"});
-            }
-        }
 
-        tableModel.setRowCount(0); // Xóa dữ liệu cũ
-
-        try {
-            SanPhamRepo repo =new DaoSP();
-            List<SanPhamDTO> danhSach = repo.layDanhSachSanPham();
-
-            for (SanPhamDTO sp : danhSach) {
-                tableModel.addRow(new Object[]{
-                        sp.getMaSP(),
-                        sp.getTenSP(),
-                        sp.getSoLuong(),
-                        sp.getTinhTrang(),
-                        sp.getHanSD(),
-                        sp.getGiaNhap(),
-                        sp.getGiaXuat()
-                });
-            }
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Lỗi khi tải dữ liệu: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
-            ex.printStackTrace();
-        }
-    }
 
 
 
@@ -853,4 +838,13 @@ public class Sanpham extends JPanel {
         // Thêm logic kiểm tra nếu cần
         return true;
     }
+
+
+
+
+
+
+
+
+
 }

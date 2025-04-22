@@ -2,8 +2,15 @@ package Dao;
 import Config.Mysql;
 import DTO.NhaCungCapDTO;
 import Repository.NCCRepo;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+
 
 import javax.swing.*;
+import java.io.FileOutputStream;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -130,5 +137,56 @@ public class DaoNCC implements NCCRepo {
             return false;
         }
     }
+
+    @Override
+    public void xuatExcel(String filePath) {
+        // Lấy danh sách nhà cung cấp
+        List<NhaCungCapDTO> danhSachNCC = layDanhSachNhaCungCap(); // Hàm này nên nằm trong lớp DaoNCC
+
+        // Tạo workbook mới
+        Workbook workbook = new XSSFWorkbook();
+        Sheet sheet = workbook.createSheet("DanhSachNhaCungCap");
+
+        // Tạo dòng tiêu đề
+        Row headerRow = sheet.createRow(0);
+        String[] columns = {"Mã NCC", "Tên NCC", "Số ĐT", "Địa Chỉ", "Email", "Tình Trạng"};
+        for (int i = 0; i < columns.length; i++) {
+            Cell cell = headerRow.createCell(i);
+            cell.setCellValue(columns[i]);
+        }
+
+        // Ghi dữ liệu
+        int rowNum = 1;
+        for (NhaCungCapDTO ncc : danhSachNCC) {
+            Row row = sheet.createRow(rowNum++);
+            row.createCell(0).setCellValue(ncc.getMaNCC());
+            row.createCell(1).setCellValue(ncc.getTenNCC());
+            row.createCell(2).setCellValue(ncc.getSoDT());
+            row.createCell(3).setCellValue(ncc.getDiaChi());
+            row.createCell(4).setCellValue(ncc.getEmail());
+            row.createCell(5).setCellValue(ncc.getTinhTrang());
+        }
+
+        // Tự động căn chỉnh độ rộng cột
+        for (int i = 0; i < columns.length; i++) {
+            sheet.autoSizeColumn(i);
+        }
+
+        // Ghi ra file
+        try (FileOutputStream fileOut = new FileOutputStream(filePath)) {
+            workbook.write(fileOut);
+            JOptionPane.showMessageDialog(null, "Xuất file Excel thành công tại: " + filePath, "Thành công", JOptionPane.INFORMATION_MESSAGE);
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, "Lỗi khi xuất file Excel: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        } finally {
+            try {
+                workbook.close();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
 }
 

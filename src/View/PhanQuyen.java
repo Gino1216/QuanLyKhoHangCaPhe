@@ -1,16 +1,13 @@
 package View;
 
-import DTO.NhanVienDTO;
 import DTO.PhanQuyenDTO;
-import DTO.SanPhamDTO;
-import Dao.DaoNV;
+
 import Dao.DaoPQ;
-import Dao.DaoSP;
+import EX.ExPhanQuyen;
 import Gui.MainFunction;
 import Repository.PhanQuyenRepo;
-import Repository.SanPhamRepo;
 import View.Dialog.ChiTietPhanQuyen;
-import View.Dialog.ChiTietSanPham;
+
 import com.formdev.flatlaf.FlatLightLaf;
 
 import java.awt.*;
@@ -18,10 +15,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashMap;
+
 import java.util.List;
 import java.util.Map;
 import javax.swing.*;
@@ -31,10 +25,6 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
 import javax.swing.border.EmptyBorder;
-import javax.swing.text.AbstractDocument;
-import javax.swing.text.AttributeSet;
-import javax.swing.text.BadLocationException;
-import javax.swing.text.DocumentFilter;
 
 public class PhanQuyen extends JPanel {
 
@@ -97,7 +87,7 @@ public class PhanQuyen extends JPanel {
         functionBar.setButtonActionListener("detail", this::showPermissionDetailDialog);
         functionBar.setButtonActionListener("delete", this::deletePermission);
         functionBar.setButtonActionListener("import", this::importPermissions);
-        functionBar.setButtonActionListener("export", this::exportPermissions);
+        functionBar.setButtonActionListener("export", this::exportToExcel);
 
         return topPanel;
     }
@@ -190,6 +180,10 @@ public class PhanQuyen extends JPanel {
     }
 
 
+    private void exportToExcel() {
+        ExPhanQuyen.exportPhanQuyenToExcel("E:/DanhSachPhanQuyen.xlsx"); // Dùng / thay cho \\
+    }
+
 
 
 
@@ -198,9 +192,6 @@ public class PhanQuyen extends JPanel {
         JOptionPane.showMessageDialog(this, "Chức năng nhập nhóm quyền chưa được triển khai!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
     }
 
-    private void exportPermissions() {
-        JOptionPane.showMessageDialog(this, "Chức năng xuất nhóm quyền chưa được triển khai!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
-    }
 
     public void showAddPermissionDialog() {
         JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Thêm Phân Quyền", true);
@@ -527,7 +518,6 @@ public class PhanQuyen extends JPanel {
 
         btnRefresh.addActionListener(e -> {
             txtSearch.setText("");
-            loadData();
             table.setRowSorter(null);
         });
 
@@ -634,7 +624,5 @@ public class PhanQuyen extends JPanel {
         sorter.setRowFilter(rf);
     }
 
-    private void loadData() {
-        System.out.println("Dữ liệu đã được làm mới.");
-    }
+
 }

@@ -18,4 +18,7 @@ import java.util.List;
 
     boolean kiemTraMaNCCTonTai(String maNCC);
 
-}
+    void xuatExcel(String filePath);
+
+
+ }

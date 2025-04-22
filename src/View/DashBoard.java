@@ -1,5 +1,6 @@
 package View;
 
+import Dao.DaoSP;
 import com.formdev.flatlaf.FlatLightLaf;
 import java.awt.*;
 import javax.swing.*;
@@ -42,8 +43,13 @@ public class DashBoard extends JPanel {
         summaryPanel.setOpaque(false);
 
         summaryPanel.add(createSummaryCard("Doanh Thu Hôm Nay", "12,500,000đ", new Color(0, 168, 150)));
+
         summaryPanel.add(createSummaryCard("Số Đơn Bán", "28 Đơn", new Color(255, 193, 7)));
-        summaryPanel.add(createSummaryCard("Tồn Kho", "720 Sản phẩm", new Color(100, 181, 246)));
+
+
+        DaoSP daoSP =new DaoSP();
+        int count = daoSP.demSoLuongSanPham();
+        summaryPanel.add(createSummaryCard("Số sản phẩm", String.valueOf(count)+ " sản phẩm", new Color(100, 181, 246)));
 
         add(summaryPanel, BorderLayout.CENTER);
 

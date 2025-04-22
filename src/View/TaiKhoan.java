@@ -8,6 +8,8 @@ import Dao.DaoAccount;
 import Dao.DaoNV;
 import Dao.DaoPQ;
 import Dao.DaoSP;
+import EX.ExAccount;
+import EX.ExNhanVien;
 import Gui.MainFunction;
 import Repository.AccountRepo;
 import Repository.SanPhamRepo;
@@ -57,6 +59,11 @@ public class TaiKhoan extends JPanel {
         setBackground(backgroundColor);
     }
 
+    private void exportToExcel() {
+        ExAccount.exportAccountToExcel("E:/DanhSachTaiKhoan.xlsx"); // Dùng / thay cho \\
+    }
+
+
     // Method to create top panel (includes function bar and search panel)
     private JPanel createTopPanel() {
         JPanel topPanel = new JPanel(new BorderLayout());
@@ -75,6 +82,7 @@ public class TaiKhoan extends JPanel {
         functionBar.setButtonActionListener("create", this::showAddAccountDialog);
         functionBar.setButtonActionListener("update", this::showEditAccountDialog);
         functionBar.setButtonActionListener("delete", this::deleteAccount);
+        functionBar.setButtonActionListener("export", this::exportToExcel);
 
 
         return topPanel;
@@ -300,8 +308,7 @@ public class TaiKhoan extends JPanel {
                     username,
                     "******"
             });
-            loadData();
-
+            table.setRowSorter(null);
             dialog.dispose();
         });
 
@@ -510,7 +517,7 @@ public class TaiKhoan extends JPanel {
                         "Lỗi", JOptionPane.ERROR_MESSAGE);
                 ex.printStackTrace();
             }
-            loadData();
+            table.setRowSorter(null);
         });
 
         btnCancel.addActionListener(e -> dialog.dispose());
@@ -527,7 +534,7 @@ public class TaiKhoan extends JPanel {
         JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 0));
         searchPanel.setBackground(backgroundColor);
 
-        cbbFilter = new JComboBox<>(new String[]{"Tất cả", "Tên đăng nhập", "Mã quyền"});
+        cbbFilter = new JComboBox<>(new String[]{"Tất cả", "Tài khoản", "Mã quyền"});
         cbbFilter.setPreferredSize(new Dimension(100, 25));
 
         txtSearch = new JTextField();
@@ -549,7 +556,6 @@ public class TaiKhoan extends JPanel {
 
         btnRefresh.addActionListener(e -> {
             txtSearch.setText("");
-            loadData();
             table.setRowSorter(null);
         });
 
@@ -643,76 +649,36 @@ public class TaiKhoan extends JPanel {
 
 
     private void filterData() {
-        String searchText = txtSearch.getText().toLowerCase();
-        String selectedFilter = (String) cbbFilter.getSelectedItem();
-        TableRowSorter<TableModel> sorter = new TableRowSorter<>(table.getModel());
-        table.setRowSorter(sorter);
+        String searchText = txtSearch.getText().toLowerCase(); // Lấy dữ liệu tìm kiếm và chuyển thành chữ thường
+        String selectedFilter = (String) cbbFilter.getSelectedItem(); // Lấy giá trị của filter
+        TableRowSorter<TableModel> sorter = new TableRowSorter<>(table.getModel()); // Khởi tạo TableRowSorter
+        table.setRowSorter(sorter); // Gắn sorter vào table
 
         if (searchText.isEmpty()) {
-            sorter.setRowFilter(null);
+            sorter.setRowFilter(null); // Nếu không có từ khóa tìm kiếm, bỏ lọc
             return;
         }
 
         int[] columnIndices;
         if ("Tất cả".equals(selectedFilter)) {
-            columnIndices = new int[]{1, 2, 3}; // Bỏ cột Mã tài khoản
+            // Nếu chọn "Tất cả", lọc tất cả các cột
+            columnIndices = new int[]{0, 1, 2, }; // 4 cột tương ứng với Account
         } else {
+            // Dùng switch để xác định cột cần lọc dựa vào lựa chọn của người dùng
             int columnIndex = switch (selectedFilter) {
-                case "Tên đăng nhập" -> 1;
-                case "Mã quyền" -> 2;
-                default -> 1;
+                case "Tài khoản" -> 1;    // Cột "Username"
+                case "Mã quyền" -> 2;        // Cột "Role"
+                default -> 0;            // Mặc định lọc theo cột "Mã NV"
             };
-            columnIndices = new int[]{columnIndex};
+            columnIndices = new int[]{columnIndex}; // Lọc theo cột đã chọn
         }
 
+        // Cài đặt bộ lọc với regex không phân biệt chữ hoa chữ thường
         RowFilter<TableModel, Object> rf = RowFilter.regexFilter("(?i)" + searchText, columnIndices);
-        sorter.setRowFilter(rf);
+        sorter.setRowFilter(rf); // Áp dụng bộ lọc
     }
 
-    private void loadData() {
-        // Khởi tạo tableModel nếu chưa có
-        if (tableModel == null) {
-            tableModel = new DefaultTableModel(
-                    new String[]{"Mã quyền", "Tên đăng nhập", "Mật khẩu"}, 0);
-            table.setModel(tableModel);
-        } else {
-            // Đảm bảo có cột nếu tableModel đã tồn tại mà bị xóa cột trước đó
-            if (tableModel.getColumnCount() == 0) {
-                tableModel.setColumnIdentifiers(new String[]{"Quyền", "Tên đăng nhập", "Mật khẩu"});
-            }
-        }
 
-        tableModel.setRowCount(0); // Xóa dữ liệu cũ
-
-        try {
-            AccountRepo repo = new DaoAccount();
-            List<Account> danhSach = repo.layDanhSachAccount();
-
-            // Lấy danh sách quyền để ánh xạ mã số thành tên
-            DaoPQ daoPQ = new DaoPQ();
-            List<PhanQuyenDTO> dsQuyen = daoPQ.layDanhSachQuyen();
-            Map<Integer, String> mapQuyen = new HashMap<>();
-            for (PhanQuyenDTO quyen : dsQuyen) {
-                mapQuyen.put(quyen.getMaQuyen(), quyen.getNoiDung());
-            }
-
-            // Thêm dữ liệu vào table
-            for (Account acc : danhSach) {
-                String tenQuyen = mapQuyen.getOrDefault(acc.getRole(), "Không xác định");
-                tableModel.addRow(new Object[]{
-                        tenQuyen,  // Hiển thị tên quyền thay vì mã số
-                        acc.getUsername(),
-                        acc.getPassword()
-                });
-            }
-
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this,
-                    "Lỗi khi tải dữ liệu: " + ex.getMessage(),
-                    "Lỗi", JOptionPane.ERROR_MESSAGE);
-            ex.printStackTrace();
-        }
-    }
 
     private void deleteAccount() {
         int selectedRow = table.getSelectedRow();

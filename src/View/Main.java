@@ -1,5 +1,6 @@
 package View;
 
+import Config.MenuConfig;
 import DTO.Account;
 import Gui.IconUtils;
 import com.formdev.flatlaf.FlatLightLaf;
@@ -266,6 +267,9 @@ public class Main extends JFrame {
                 break;
             case "Phân quyền":
                 newPanel = new PhanQuyen();
+                break;
+            case "Trả hàng":
+                newPanel = new TraHang();
                 break;
         }
 

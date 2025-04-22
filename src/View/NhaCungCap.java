@@ -3,6 +3,8 @@ package View;
 import DTO.NhaCungCapDTO;
 
 import Dao.DaoNCC;
+import EX.ExNhaCungCap;
+import EX.ExNhanVien;
 import Gui.MainFunction;
 import Repository.NCCRepo;
 import View.Dialog.ChiTietNhaCungCap;
@@ -63,6 +65,8 @@ public class NhaCungCap extends JPanel {
         functionBar.setButtonActionListener("update", this::showEditSupplierDialog);
         functionBar.setButtonActionListener("delete",this::DeleteNhaCungCap);
         functionBar.setButtonActionListener("detail",this::showSupplierDetails);
+        functionBar.setButtonActionListener("export",this::exportToExcel);
+
 
     }
 
@@ -517,7 +521,6 @@ public class NhaCungCap extends JPanel {
 
         btnRefresh.addActionListener(e -> {
             txtSearch.setText("");
-            loadData();
             table.setRowSorter(null);
         });
 
@@ -608,6 +611,7 @@ public class NhaCungCap extends JPanel {
             return;
         }
 
+
         int modelRow = table.convertRowIndexToModel(selectedRow);
         String id = table.getValueAt(modelRow, 0).toString();
         String name = table.getValueAt(modelRow, 1).toString();
@@ -617,11 +621,14 @@ public class NhaCungCap extends JPanel {
         String status = table.getValueAt(modelRow, 5).toString();
 
 
-        ChiTietNhaCungCap detailDialog = new ChiTietNhaCungCap(id, name, address, phone,email,status);
+            ChiTietNhaCungCap detailDialog = new ChiTietNhaCungCap(id, name, phone,email,address,status);
         detailDialog.setVisible(true);
     }
 
 
+    private void exportToExcel() {
+                ExNhaCungCap.exportNhaCungCapToExcel( "E:/nhacungcap.xlsx");
+    }
 
 
     private void filterData() {
@@ -637,17 +644,16 @@ public class NhaCungCap extends JPanel {
 
         int[] columnIndices;
         if ("Tất cả".equals(selectedFilter)) {
-            columnIndices = new int[]{0, 1, 2, 3, 4};
+            columnIndices = new int[]{0, 1, 2, 3, 4, 5};
         } else {
             int columnIndex = switch (selectedFilter) {
-                case "Tên nhà cung cấp" ->
-                    1;
-                case "Địa chỉ" ->
-                    2;
-                case "Email" ->
-                    3;
-                default ->
-                    0;
+                case "Mã NCC" -> 0;
+                case "Tên NCC" -> 1;
+                case "Số điện thoại" -> 2;
+                case "Email" -> 3;
+                case "Địa chỉ" -> 4;
+                case "Tình trạng" -> 5;
+                default -> 0;
             };
             columnIndices = new int[]{columnIndex};
         }
@@ -656,9 +662,9 @@ public class NhaCungCap extends JPanel {
         sorter.setRowFilter(rf);
     }
 
-    private void loadData() {
-        System.out.println("Dữ liệu đã được làm mới.");
-    }
+
+
+
 
     private void DeleteNhaCungCap() {
         int selectedRow = table.getSelectedRow();

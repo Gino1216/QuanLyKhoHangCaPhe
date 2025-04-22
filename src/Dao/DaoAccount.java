@@ -1,13 +1,24 @@
 package Dao;
 
 import Config.Mysql;
+import Config.Session;
 import DTO.Account;
 import Repository.AccountRepo;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import javax.swing.*;
+import java.io.FileOutputStream;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+
+
+
+
 
 public class DaoAccount implements AccountRepo {
 
@@ -143,6 +154,34 @@ public class DaoAccount implements AccountRepo {
         return result;
     }
 
+
+
+    public List<Account> layDanhSachAccountFull() {
+        List<Account> result = new ArrayList<>();
+        String sql = "SELECT * FROM taikhoan ";
+        try (Connection conn = Mysql.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+            while (rs.next()) {
+                Account acc = new Account(
+                        rs.getString("username"),
+                        rs.getString("pass"),
+                        rs.getInt("MaQuyen")
+                );
+                result.add(acc);
+            }
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(null, "Lỗi khi lấy danh sách tài khoản: " + e.getMessage(),
+                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
+        return result;
+    }
+
+
+
+
+
+
     @Override
     public Account checkLogin(String username, String password) {
         String sql = "SELECT * FROM taikhoan WHERE username = ? AND pass = ?";
@@ -152,6 +191,7 @@ public class DaoAccount implements AccountRepo {
             stmt.setString(2, password);
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
+                    // Tạo đối tượng Account, sẽ tự động lưu vào Session
                     return new Account(
                             rs.getString("username"),
                             rs.getString("pass"),
@@ -165,4 +205,55 @@ public class DaoAccount implements AccountRepo {
         }
         return null;
     }
+
+
+
+    @Override
+    public void xuatExcel(String filePath) {
+        // Lấy danh sách tài khoản (giả sử có phương thức này)
+        List<Account> accountList = layDanhSachAccount();
+
+        // Tạo workbook mới
+        Workbook workbook = new XSSFWorkbook();
+        Sheet sheet = workbook.createSheet("DanhSachAccount");
+
+        // Tạo dòng tiêu đề
+        Row headerRow = sheet.createRow(0);
+        String[] columns = {"Mã NV", "Username", "Password", "Role"};
+        for (int i = 0; i < columns.length; i++) {
+            Cell cell = headerRow.createCell(i);
+            cell.setCellValue(columns[i]);
+        }
+
+        // Điền dữ liệu
+        int rowNum = 1;
+        for (Account account : accountList) {
+            Row row = sheet.createRow(rowNum++);
+            row.createCell(0).setCellValue(account.getMaNV());
+            row.createCell(1).setCellValue(account.getUsername());
+            row.createCell(2).setCellValue(account.getPassword());
+            row.createCell(3).setCellValue(account.getRole());
+        }
+
+        // Tự động điều chỉnh kích thước cột
+        for (int i = 0; i < columns.length; i++) {
+            sheet.autoSizeColumn(i);
+        }
+
+        // Ghi file
+        try (FileOutputStream fileOut = new FileOutputStream(filePath)) {
+            workbook.write(fileOut);
+            JOptionPane.showMessageDialog(null, "Xuất file Excel thành công tại: " + filePath, "Thành công", JOptionPane.INFORMATION_MESSAGE);
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, "Lỗi khi xuất file Excel: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        } finally {
+            try {
+                workbook.close();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
 }
