@@ -2,6 +2,7 @@ package Dao;
 
 import Config.Mysql;
 import DTO.ChiTietPhieuNhapDTO;
+import DTO.SanPhamDTO;
 import Repository.ChiTietPhieuNhapRepo;
 
 import javax.swing.*;
@@ -117,4 +118,35 @@ public class DaoChiTietPhieuNhap implements ChiTietPhieuNhapRepo {
         }
         return false;
     }
+
+
+
+    public List<ChiTietPhieuNhapDTO> layDanhSach() {
+        List<ChiTietPhieuNhapDTO> result = new ArrayList<>();
+        String sql = "SELECT * FROM chitietpn";
+
+        try (Connection conn = Mysql.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+
+            while (rs.next()) {
+                String maPN = rs.getString("MaPN");
+                String maSP = rs.getString("MaSP");
+                String tenSP = rs.getString("TenSP");
+                int soLuong = rs.getInt("SoLuong");
+                float donGia = rs.getFloat("DonGia");
+                float thanhTien = rs.getFloat("ThanhTien");
+
+                ChiTietPhieuNhapDTO ct = new ChiTietPhieuNhapDTO(maPN, maSP, tenSP, soLuong, donGia, thanhTien);
+                result.add(ct);
+            }
+
+            System.out.println("Lấy danh sách: " + result.size() + " sản phẩm được lấy");
+        } catch (SQLException e) {
+            System.out.println("Lỗi khi lấy danh sách sản phẩm: " + e);
+        }
+        return result;
+
+    }
+
 }

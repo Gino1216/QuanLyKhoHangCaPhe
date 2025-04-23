@@ -175,6 +175,7 @@ public class CreaterPhieuNhap extends JFrame {
         txtPrice = new JTextField();
         txtPrice.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         txtPrice.setPreferredSize(new Dimension(200, 35));
+        txtPrice.setEditable(false);
         gbc.gridx = 3;
         rightPanel.add(txtPrice, gbc);
 
@@ -321,14 +322,7 @@ public class CreaterPhieuNhap extends JFrame {
             totalAmount += (long) thanhTien;
             updateTotalLabel();
 
-            // Cập nhật số lượng tồn kho
-            for (SanPhamDTO sp : sanPhamList) {
-                if (sp.getMaSP().equals(maSP)) {
-                    sp.setSoLuong(sp.getSoLuong() + quantity);
-                    daoSP.suaSanPham(sp); // Cập nhật tồn kho trong database
-                    break;
-                }
-            }
+
 
             // Reset các trường
             txtQuantity.setText("");
@@ -368,14 +362,7 @@ public class CreaterPhieuNhap extends JFrame {
             // Cập nhật tổng tiền
             updateTotalLabel();
 
-            // Khôi phục số lượng tồn kho
-            for (SanPhamDTO sp : sanPhamList) {
-                if (sp.getMaSP().equals(maSP)) {
-                    sp.setSoLuong(sp.getSoLuong() - quantity);
-                    daoSP.suaSanPham(sp); // Cập nhật tồn kho trong database
-                    break;
-                }
-            }
+
         });
 
         btnImportExcel.addActionListener(e -> {

@@ -1,5 +1,6 @@
 package View;
 
+import Config.Session;
 import DTO.Account;
 import Dao.DaoAccount;
 
@@ -148,6 +149,7 @@ public class LoginMain {
                 DaoAccount daoAccount =new DaoAccount();
                 // Xác thực tài khoản
                 Account loggedInAccount = daoAccount.checkLogin(username, String.valueOf(password));
+                System.out.println("Role: " + Session.getRole());
 
                 if (loggedInAccount == null) {
                     JOptionPane.showMessageDialog(frame, "Tên đăng nhập hoặc mật khẩu không đúng!", "Lỗi", JOptionPane.ERROR_MESSAGE);

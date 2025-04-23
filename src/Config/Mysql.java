@@ -22,7 +22,7 @@ public class Mysql {
             Class.forName("com.mysql.cj.jdbc.Driver");
 
             // Các thông số kết nối
-            String url = "jdbc:mysql://localhost:3306/quanlycuahang2?useSSL=false&allowPublicKeyRetrieval=true";
+            String url = "jdbc:mysql://localhost:3306/quanlycuahang2?useUnicode=true&characterEncoding=UTF-8";
             String userName = "springstudent";
             String password = "springstudent";
 

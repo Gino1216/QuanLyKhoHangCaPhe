@@ -4,6 +4,8 @@
  */
 package View;
 
+import Config.Session;
+import Controller.SanphamController;
 import DTO.SanPhamDTO;
 import Dao.DaoSP;
 import Gui.MainFunction;
@@ -102,16 +104,65 @@ public class Sanpham extends JPanel {
         topPanel.add(searchPanel, BorderLayout.EAST);
 
         // Button actions for toolbar
-        functionBar.setButtonActionListener("create", this::showAddProductDialog);
-        functionBar.setButtonActionListener("update", this::showEditProductDialog);
-        functionBar.setButtonActionListener("delete",this::DeleteProduct);
-        functionBar.setButtonActionListener("detail",this::showCustomerDetails);
-        functionBar.setButtonActionListener("export", this:: exportToExcel);
+        functionBar.setButtonActionListener("create", () -> {
+            if (Session.getRole() == 3) {
+                try {
+                    showAddProductDialog();
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(null,
+                            "Lỗi khi thêm sản phẩm: " + ex.getMessage(),
+                            "Lỗi",
+                            JOptionPane.ERROR_MESSAGE);
+                }
+            } else {
+                JOptionPane.showMessageDialog(null,
+                        "Bạn không có quyền thêm sản phẩm!",
+                        "Thông báo",
+                        JOptionPane.ERROR_MESSAGE);
+            }
+        });
 
+        functionBar.setButtonActionListener("update", () -> {
+            if (Session.getRole() == 3) {
+                try {
+                    showEditProductDialog();
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(null,
+                            "Lỗi khi chỉnh sửa sản phẩm: " + ex.getMessage(),
+                            "Lỗi",
+                            JOptionPane.ERROR_MESSAGE);
+                }
+            } else {
+                JOptionPane.showMessageDialog(null,
+                        "Bạn không có quyền chỉnh sửa sản phẩm!",
+                        "Thông báo",
+                        JOptionPane.ERROR_MESSAGE);
+            }
+        });
+
+        functionBar.setButtonActionListener("delete", () -> {
+            if (Session.getRole() == 3) {
+                try {
+                    DeleteProduct(); // Sửa thành chữ thường để theo chuẩn
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(null,
+                            "Lỗi khi xóa sản phẩm: " + ex.getMessage(),
+                            "Lỗi",
+                            JOptionPane.ERROR_MESSAGE);
+                }
+            } else {
+                JOptionPane.showMessageDialog(null,
+                        "Bạn không có quyền xóa sản phẩm!",
+                        "Thông báo",
+                        JOptionPane.ERROR_MESSAGE);
+            }
+        });
+
+        functionBar.setButtonActionListener("detail", this::showCustomerDetails);
+        functionBar.setButtonActionListener("export", this::exportToExcel);
 
         return topPanel;
     }
-
     private void exportToExcel() {
         ExSanPham.exportSanPhamToExcel("E:/DanhSachSanPham.xlsx"); // Dùng / thay cho \\
     }
@@ -229,6 +280,10 @@ public class Sanpham extends JPanel {
         btnAdd.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+
+                SanphamController handler = new SanphamController();
+                handler.handleAddProduct();
+
                 // Kiểm tra dữ liệu đầu vào
                 String maSP = textFields[0].getText().trim();
                 String tenSP = textFields[1].getText().trim();
@@ -330,6 +385,10 @@ public class Sanpham extends JPanel {
 
         dialog.setVisible(true);
     }
+
+
+
+
 
     private void showEditProductDialog() {
         int selectedRow = table.getSelectedRow();

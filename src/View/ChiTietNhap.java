@@ -5,10 +5,12 @@
 package View;
 
 import DTO.ChiTietPhieuNhapDTO;
+import PDF.PDFN;
 import com.formdev.flatlaf.FlatLightLaf;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.io.File;
 import java.util.List;
 
 /**
@@ -152,9 +154,66 @@ public class ChiTietNhap extends JFrame {
         btnExportPDF.setFont(new Font("Segoe UI", Font.BOLD, 12));
         btnExportPDF.setPreferredSize(new Dimension(120, 30));
         btnExportPDF.addActionListener(e -> {
-            JOptionPane.showMessageDialog(this, "Chức năng xuất file PDF chưa được triển khai!",
-                    "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+            try {
+                // Tạo thư mục lưu file trong ổ E nếu chưa tồn tại
+                String directoryPath = "E:/";
+                File directory = new File(directoryPath);
+                if (!directory.exists()) {
+                    boolean created = directory.mkdirs(); // Tạo thư mục
+                    if (!created) {
+                        JOptionPane.showMessageDialog(this, "Không thể tạo thư mục " + directoryPath + " trong ổ E!",
+                                "Lỗi", JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+                }
+
+                // Định nghĩa đường dẫn file trong ổ E
+                String filePath = directoryPath + "PhieuNhap_" + exportId + ".pdf";
+
+                // Kiểm tra dữ liệu
+                String[] labels = {"Mã phiếu:", "Khách hàng:", "Nhân viên xuất:", "Thời gian tạo:", "Tổng tiền:"};
+                String[] values = {
+                        exportId != null ? exportId : "",
+                        customer != null ? customer : "",
+                        employee != null ? employee : "",
+                        exportDate != null ? exportDate : "",
+                        totalAmount != null ? totalAmount : ""
+                };
+
+                if (labels.length != values.length) {
+                    JOptionPane.showMessageDialog(this, "Số lượng nhãn và giá trị không khớp!",
+                            "Lỗi", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                // Kiểm tra coffeeItems trước khi xuất PDF
+                if (coffeeItems == null || coffeeItems.isEmpty()) {
+                    System.out.println("coffeeItems is null or empty when exporting PDF");
+                    JOptionPane.showMessageDialog(this, "Không có dữ liệu sản phẩm để xuất PDF!",
+                            "Cảnh báo", JOptionPane.WARNING_MESSAGE);
+                } else {
+                    System.out.println("Xuất PDF với " + coffeeItems.size() + " sản phẩm");
+                    for (ChiTietPhieuNhapDTO item : coffeeItems) {
+                        System.out.println("Sản phẩm trong PDF: " + item.getMaSP() + ", Số lượng: " + item.getSoLuong());
+                    }
+                }
+
+                // Xuất file PDF trực tiếp vào ổ E
+                PDFN exporter = new PDFN();
+                exporter.exportToPDF(this, "THÔNG TIN PHIẾU NHẬP", labels, values, coffeeItems, filePath);
+
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                JOptionPane.showMessageDialog(this, "Lỗi khi lưu file PDF vào ổ E: " + ex.getMessage(),
+                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+            }
         });
+
+
+
+
+
+
 
         JButton btnCancel = new JButton("Hủy bỏ");
         btnCancel.setBackground(cancelButtonColor);

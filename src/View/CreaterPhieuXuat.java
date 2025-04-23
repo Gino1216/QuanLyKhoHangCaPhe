@@ -303,7 +303,6 @@ public class CreaterPhieuXuat extends JFrame {
                 return;
             }
 
-            // Kiểm tra xem chi tiết phiếu xuất đã tồn tại chưa
             if (daoChiTietPhieuXuat.kiemTraTonTai(maPX, maSP)) {
                 JOptionPane.showMessageDialog(this, "Sản phẩm này đã tồn tại trong phiếu xuất!", "Lỗi", JOptionPane.ERROR_MESSAGE);
                 return;
@@ -323,15 +322,6 @@ public class CreaterPhieuXuat extends JFrame {
             // Cập nhật tổng tiền
             totalAmount += (long) thanhTien;
             updateTotalLabel();
-
-            // Cập nhật số lượng tồn kho
-            for (SanPhamDTO sp : sanPhamList) {
-                if (sp.getMaSP().equals(maSP)) {
-                    sp.setSoLuong(sp.getSoLuong() - quantity);
-                    daoSP.suaSanPham(sp); // Cập nhật tồn kho trong database
-                    break;
-                }
-            }
 
             // Reset các trường
             txtQuantity.setText("");
@@ -374,14 +364,6 @@ public class CreaterPhieuXuat extends JFrame {
             // Cập nhật tổng tiền
             updateTotalLabel();
 
-            // Khôi phục số lượng tồn kho
-            for (SanPhamDTO sp : sanPhamList) {
-                if (sp.getMaSP().equals(maSP)) {
-                    sp.setSoLuong(sp.getSoLuong() + quantity);
-                    daoSP.suaSanPham(sp); // Cập nhật tồn kho trong database
-                    break;
-                }
-            }
         });
 
 

@@ -72,6 +72,47 @@ public class DaoPhieuXuat implements PhieuXuatRepo {
         }
     }
 
+    public int demSoLuongPXChuaDuyet() {
+        int soLuong = 0;
+        String sql = "SELECT COUNT(*) AS SoLuong FROM phieuxuat WHERE TrangThai = 'Chưa duyệt'";
+
+        try (Connection conn = Mysql.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+
+            if (rs.next()) {
+                soLuong = rs.getInt("SoLuong");
+            }
+
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(null,
+                    "Lỗi khi đếm phiếu xuất chưa duyệt: " + e.getMessage(),
+                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
+
+        return soLuong;
+    }
+
+    public float tinhTongTienPXDaDuyet() {
+        float tongTien = 0;
+        String sql = "SELECT SUM(TongTien) AS TongTien FROM phieuxuat WHERE TrangThai =  'Hoàn thành'";
+
+        try (Connection conn = Mysql.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+
+            if (rs.next()) {
+                tongTien = rs.getFloat("TongTien");
+            }
+
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(null,
+                    "Lỗi khi tính tổng tiền phiếu xuất đã duyệt: " + e.getMessage(),
+                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
+
+        return tongTien;
+    }
 
 
 
@@ -290,25 +331,6 @@ public class DaoPhieuXuat implements PhieuXuatRepo {
         }
 
         return newMaPX;
-    }
-
-
-    public List<String> layDanhSachMaPX() {
-        List<String> maPXList = new ArrayList<>();
-        String sql = "SELECT MaPX FROM phieuxuat ORDER BY MaPX";
-
-        try (Connection conn = Mysql.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery()) {
-
-            while (rs.next()) {
-                maPXList.add(rs.getString("MaPX"));
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            // Có thể thêm logging hoặc thông báo lỗi
-        }
-        return maPXList;
     }
 
 

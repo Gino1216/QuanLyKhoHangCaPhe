@@ -109,6 +109,35 @@ public class DaoChiTietPhieuXuat implements ChiTietPhieuXuatRepo {
         return list;
     }
 
+
+
+    public List<ChiTietPhieuXuatDTO> laySoLuongTheoMaPX(String maPX) {
+        List<ChiTietPhieuXuatDTO> list = new ArrayList<>();
+        String sql = "SELECT * FROM chitietpx WHERE MaPX = ?";
+        try (Connection conn = Mysql.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, maPX);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    ChiTietPhieuXuatDTO ct = new ChiTietPhieuXuatDTO(
+                            rs.getString("MaPX"),
+                            rs.getString("MaSP"),
+                            rs.getString("TenSP"),
+                            rs.getInt("SoLuong"),
+                            rs.getFloat("DonGia"),
+                            rs.getFloat("ThanhTien")
+                    );
+                    list.add(ct);
+                }
+            }
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(null, "Lỗi khi lấy chi tiết PX: " + e.getMessage(),
+                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
+        return list;
+    }
+
+
     // Thêm phương thức mới để lấy thông tin chi tiết phiếu xuất theo mã PX và trạng thái hoàn thành
     public List<ChiTietPhieuXuatDTO> layChiTietPhieuXuatHoanThanhTheoMaPX(String maPX) {
         List<ChiTietPhieuXuatDTO> list = new ArrayList<>();

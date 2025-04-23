@@ -1,6 +1,9 @@
 package View;
 
+import Dao.DaoPhieuNhap;
+import Dao.DaoPhieuXuat;
 import Dao.DaoSP;
+import Dao.DaoTraHang;
 import com.formdev.flatlaf.FlatLightLaf;
 import java.awt.*;
 import javax.swing.*;
@@ -42,20 +45,23 @@ public class DashBoard extends JPanel {
         JPanel summaryPanel = new JPanel(new GridLayout(1, 3, 20, 20));
         summaryPanel.setOpaque(false);
 
-        summaryPanel.add(createSummaryCard("Doanh Thu Hôm Nay", "12,500,000đ", new Color(0, 168, 150)));
+        DaoPhieuXuat daoPhieuXuat =new DaoPhieuXuat();
+        DaoPhieuNhap daoPhieuNhap =new DaoPhieuNhap();
+        DaoTraHang daoTraHang =new DaoTraHang();
+        float Tien = daoPhieuXuat.tinhTongTienPXDaDuyet() - daoPhieuNhap.tinhTongTienPNDaDuyet() - daoTraHang.tinhTongTienHoanTraDaDuyet();
 
-        summaryPanel.add(createSummaryCard("Số Đơn Bán", "28 Đơn", new Color(255, 193, 7)));
+        summaryPanel.add(createSummaryCard("Doanh Thu", String.valueOf(Tien)+" VND", new Color(0, 168, 150)));
+
+        int countPN =daoPhieuNhap.demSoLuongPNchuaDuyet();
+        summaryPanel.add(createSummaryCard("Số đơn nhập chưa duyệt", String.valueOf(countPN)+" đơn", new Color(255, 193, 7)));
 
 
-        DaoSP daoSP =new DaoSP();
-        int count = daoSP.demSoLuongSanPham();
-        summaryPanel.add(createSummaryCard("Số sản phẩm", String.valueOf(count)+ " sản phẩm", new Color(100, 181, 246)));
+        int count = daoPhieuXuat.demSoLuongPXChuaDuyet();
+        summaryPanel.add(createSummaryCard("Số đơn xuất chưa duyệt", String.valueOf(count)+ " đơn", new Color(100, 181, 246)));
 
         add(summaryPanel, BorderLayout.CENTER);
 
         // Panel biểu đồ
-        JPanel chartPanel = createChartPanel();
-        add(chartPanel, BorderLayout.SOUTH);
     }
 
     private JPanel createSummaryCard(String title, String value, Color valueColor) {
@@ -88,61 +94,5 @@ public class DashBoard extends JPanel {
         return card;
     }
 
-    private JPanel createChartPanel() {
-        JPanel chartPanel = new JPanel() {
-            @Override
-            protected void paintComponent(Graphics g) {
-                super.paintComponent(g);
-                Graphics2D g2d = (Graphics2D) g;
-                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                int w = getWidth(), h = getHeight();
-                // Gradient background for chart panel
-                GradientPaint gp = new GradientPaint(0, 0, new Color(220, 240, 255), 0, h, Color.WHITE);
-                g2d.setPaint(gp);
-                g2d.fillRoundRect(0, 0, w - 1, h - 1, 15, 15);
-            }
-        };
-        chartPanel.setOpaque(false);
-        chartPanel.setBorder(BorderFactory.createTitledBorder(
-                BorderFactory.createLineBorder(borderColor),
-                "Biểu đồ Doanh Thu Tuần",
-                0, 0,
-                new Font("Segoe UI", Font.PLAIN, 16),
-                textColor
-        ));
-        chartPanel.setPreferredSize(new Dimension(0, 250));
-        chartPanel.setLayout(new BorderLayout());
-
-        // Mock chart placeholder with a simple line graph outline
-        JPanel chartPlaceholder = new JPanel() {
-            @Override
-            protected void paintComponent(Graphics g) {
-                super.paintComponent(g);
-                Graphics2D g2d = (Graphics2D) g;
-                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2d.setColor(new Color(150, 150, 150));
-                g2d.setStroke(new BasicStroke(2));
-
-                // Draw axes
-                g2d.drawLine(50, 150, 50, 50); // Y-axis
-                g2d.drawLine(50, 150, 300, 150); // X-axis
-
-                // Draw a simple line graph
-                g2d.setColor(new Color(59, 130, 246));
-                int[] xPoints = {50, 100, 150, 200, 250, 300};
-                int[] yPoints = {150, 120, 80, 110, 90, 70};
-                g2d.drawPolyline(xPoints, yPoints, xPoints.length);
-
-                // Add labels
-                g2d.setFont(new Font("Segoe UI", Font.ITALIC, 14));
-                g2d.setColor(textColor);
-                g2d.drawString("📈 Đang phát triển...", 50, 30);
-            }
-        };
-        chartPlaceholder.setOpaque(false);
-        chartPanel.add(chartPlaceholder, BorderLayout.CENTER);
-
-        return chartPanel;
-    }
 
 }

@@ -64,6 +64,19 @@ public class DaoPhieuNhap implements PhieuNhapRepo {
         }
     }
 
+    public boolean keToanDuyetPhieuNhap(PNDTO phieuNhap) {
+        String sql = "UPDATE phieunhap SET TrangThai = ? WHERE MaPN = ?";
+        try (Connection conn = Mysql.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, "Kế toán duyệt");
+            stmt.setString(2, phieuNhap.getMaPN());
+            int rowsAffected = stmt.executeUpdate();
+            return rowsAffected > 0;
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(null, "Lỗi khi duyệt phiếu nhập: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+    }
     public boolean duyetPhieuNhap(PNDTO phieuNhap) {
         String sql = "UPDATE phieunhap SET TrangThai = ? WHERE MaPN = ?";
         try (Connection conn = Mysql.getConnection();
@@ -78,19 +91,6 @@ public class DaoPhieuNhap implements PhieuNhapRepo {
         }
     }
 
-    public boolean keToanDuyetPhieuNhap(PNDTO phieuNhap) {
-        String sql = "UPDATE phieunhap SET TrangThai = ? WHERE MaPN = ?";
-        try (Connection conn = Mysql.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setString(1, "Kế toán duyệt");
-            stmt.setString(2, phieuNhap.getMaPN());
-            int rowsAffected = stmt.executeUpdate();
-            return rowsAffected > 0;
-        } catch (SQLException e) {
-            JOptionPane.showMessageDialog(null, "Lỗi khi kế toán duyệt phiếu nhập: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
-            return false;
-        }
-    }
 
     public boolean huyDuyetPhieuNhap(PNDTO phieuNhap) {
         String sql = "UPDATE phieunhap SET TrangThai = ? WHERE MaPN = ?";
@@ -105,6 +105,29 @@ public class DaoPhieuNhap implements PhieuNhapRepo {
             return false;
         }
     }
+
+
+    public int demSoLuongPNchuaDuyet() {
+        int soLuong = 0;
+        String sql = "SELECT COUNT(*) AS SoLuong FROM phieunhap WHERE TrangThai = 'Chưa duyệt'";
+
+        try (Connection conn = Mysql.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+
+            if (rs.next()) {
+                soLuong = rs.getInt("SoLuong");
+            }
+
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(null,
+                    "Lỗi khi đếm số lượng phiếu nhập: " + e.getMessage(),
+                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
+
+        return soLuong;
+    }
+
 
     public List<PNDTO> layDanhSachPhieuNhap() {
         List<PNDTO> result = new ArrayList<>();
@@ -128,6 +151,28 @@ public class DaoPhieuNhap implements PhieuNhapRepo {
         }
         return result;
     }
+
+    public float tinhTongTienPNDaDuyet() {
+        float tongTien = 0;
+        String sql = "SELECT SUM(TongTien) AS TongTien FROM phieunhap WHERE TrangThai =  'Hoàn thành'";
+
+        try (Connection conn = Mysql.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+
+            if (rs.next()) {
+                tongTien = rs.getFloat("TongTien");
+            }
+
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(null,
+                    "Lỗi khi tính tổng tiền phiếu nhập đã duyệt: " + e.getMessage(),
+                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
+
+        return tongTien;
+    }
+
 
 
 

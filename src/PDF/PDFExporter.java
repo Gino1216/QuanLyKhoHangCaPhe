@@ -53,7 +53,7 @@ public class PDFExporter {
 
             // Vẽ khung xung quanh nội dung
             contentStream.setLineWidth(1f);
-            contentStream.moveTo(40, 720);
+            contentStream.moveTo(40, 710);
             contentStream.lineTo(550, 720);
             contentStream.lineTo(550, 560);
             contentStream.lineTo(40, 560);

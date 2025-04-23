@@ -3,6 +3,8 @@ package View;
 import Config.Session;
 import DTO.*;
 import Dao.*;
+import EX.ExPhieuNhap;
+import EX.ExPhieuXuat;
 import Repository.PhieuXuatRepo;
 import Gui.InputDate;
 import Gui.MainFunction;
@@ -12,10 +14,7 @@ import java.text.DecimalFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.regex.Pattern;
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -36,20 +35,25 @@ public class PhieuXuat extends JPanel {
     private InputDate dateStart, dateEnd;
     private Color backgroundColor = new Color(255, 255, 255);
     private List<PXDTO> exportEntries;
-    private JTextField txtReceiptId;
 
     private JComboBox<String> cbbCustomer;
     private JComboBox<String> cbbEmployee;
     private JTextField txtFromAmount;
     private JTextField txtToAmount;
-    // Ánh xạ từ tên sang mã
-    private Map<String, String> customerNameToCodeMap;
-    private Map<String, String> employeeNameToCodeMap;
+    private List<SanPhamDTO> sanPhamList;
+
 
     public PhieuXuat() {
         exportEntries = new ArrayList<>();
-        customerNameToCodeMap = new HashMap<>();
-        employeeNameToCodeMap = new HashMap<>();
+        sanPhamList =new ArrayList<>();
+
+        DaoSP daoSP = new DaoSP();
+        sanPhamList = daoSP.layDanhSachSanPham();
+        if (sanPhamList == null) {
+            sanPhamList = new ArrayList<>(); // Đảm bảo không null
+            System.out.println("Danh sách sản phẩm rỗng hoặc không tải được!");
+        }
+
         setLayout(new BorderLayout(0, 8));
         setBackground(backgroundColor);
 
@@ -182,9 +186,6 @@ public class PhieuXuat extends JPanel {
                         "Cảnh báo", JOptionPane.WARNING_MESSAGE);
                 return;
             }
-
-            String maPX = (String) table.getValueAt(selectedRow, 0);
-
             PXDTO selectedPhieuXuat = exportEntries.get(selectedRow);
 
             String status = selectedPhieuXuat.getTrangThai();
@@ -192,10 +193,8 @@ public class PhieuXuat extends JPanel {
             if(Session.getRole()==1){
                 JOptionPane.showMessageDialog(this,"Không đủ quyền để hủy","Thông báo",JOptionPane.ERROR_MESSAGE);
             }else{
-                if ("Hoàn thành".equals(status)) {
-                    JOptionPane.showMessageDialog(this, "Không thể hủy phiếu đã duyệt!", "Lỗi", JOptionPane.ERROR_MESSAGE);
-                }else if("Không duyệt".equals(status)){
-                    JOptionPane.showMessageDialog(this, "Không thể hủy phiếu đã hủy!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                if ("Hoàn thành".equals(status)||"Không duyệt".equals(status) || "Kế toán duyệt".equals(status)) {
+                    JOptionPane.showMessageDialog(this, "Không thể hủy phiếu này!", "Lỗi", JOptionPane.ERROR_MESSAGE);
                 }
                 else {
                     table.setValueAt("Không duyệt", selectedRow, 5);  // Column 6 is where the status is stored
@@ -203,7 +202,7 @@ public class PhieuXuat extends JPanel {
 
                     // Call DuyetPhieuXuat to update the status in the database
                     DaoPhieuXuat daoPhieuXuat = new DaoPhieuXuat();  // Assuming you have this DAO available
-                    boolean isSuccess = daoPhieuXuat.DuyetPhieuXuat(selectedPhieuXuat);
+                    boolean isSuccess = daoPhieuXuat.HuyDuyetPhieuXuat(selectedPhieuXuat);
 
                     // If updating the database was successful, show a success message
                     if (isSuccess) {
@@ -223,23 +222,14 @@ public class PhieuXuat extends JPanel {
                 return;
             }
 
-            String maPX = (String) table.getValueAt(selectedRow, 0);
 
             PXDTO selectedPhieuXuat = exportEntries.get(selectedRow);
-
             String status = selectedPhieuXuat.getTrangThai();
 
             if (Session.getRole() == 1) {
                 JOptionPane.showMessageDialog(this, "Không đủ thẩm quyền để duyệt!", "Thông báo", JOptionPane.ERROR_MESSAGE);
             } else if (Session.getRole() == 2) {
-                if ("Hoàn thành".equals(status)) {
-                    JOptionPane.showMessageDialog(this, "Phiếu xuất này đã được duyệt!", "Thông báo", JOptionPane.ERROR_MESSAGE);
-                } else if ("Không duyệt".equals(status)) {
-                    JOptionPane.showMessageDialog(this, "Không thể duyệt phiếu đã hủy!", "Lỗi", JOptionPane.ERROR_MESSAGE);
-                }else if ("Kế toán duyệt".equals(status)) {
-                    JOptionPane.showMessageDialog(this, "Không thể duyệt phiếu đã duyệt!", "Lỗi", JOptionPane.ERROR_MESSAGE);
-                } else {
-                    // Cập nhật trạng thái trên giao diện và đối tượng
+                if ("Chưa duyệt".equals(status)) {
                     table.setValueAt("Kế toán duyệt", selectedRow, 5); // Cột 5 là cột trạng thái
                     selectedPhieuXuat.setTrangThai("Kế toán duyệt");
 
@@ -253,39 +243,66 @@ public class PhieuXuat extends JPanel {
                     } else {
                         JOptionPane.showMessageDialog(this, "Lỗi khi kế toán duyệt phiếu xuất!", "Lỗi", JOptionPane.ERROR_MESSAGE);
                     }
-                }
-            } else if (Session.getRole() == 3) {
-                if ("Hoàn thành".equals(status)) {
-                    JOptionPane.showMessageDialog(this, "Phiếu xuất này đã được duyệt!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
-                }else if (!"Kế toán duyệt".equals(status)) {
-                    JOptionPane.showMessageDialog(this, "Phiếu xuất cần được kế toán duyệt trước!", "Lỗi", JOptionPane.ERROR_MESSAGE);
                 }else {
-                    // Cập nhật trạng thái trên giao diện và đối tượng
-                    table.setValueAt("Hoàn thành", selectedRow, 5); // Cột 5 là cột trạng thái
+                    JOptionPane.showMessageDialog(this, "Không thể duyệt phiếu này!", "Thông báo", JOptionPane.ERROR_MESSAGE);
+                }
+            }else{
+                DaoChiTietPhieuXuat daoChiTietPhieuXuat =new DaoChiTietPhieuXuat();
+                List<ChiTietPhieuXuatDTO> chiTietList = daoChiTietPhieuXuat.layChiTietPhieuXuatTheoMaPX(selectedPhieuXuat.getMaPX());
+
+                if ("Kế toán duyệt".equals(status)) {
+                    table.setValueAt("Hoàn thành", selectedRow, 5);
                     selectedPhieuXuat.setTrangThai("Hoàn thành");
 
-                    // Gọi DAO để cập nhật trạng thái "Hoàn thành" trong cơ sở dữ liệu
-                    DaoPhieuXuat daoPhieuXuat = new DaoPhieuXuat();
+                    DaoPhieuXuat daoPhieuXuat=new DaoPhieuXuat();
                     boolean isSuccess = daoPhieuXuat.DuyetPhieuXuat(selectedPhieuXuat);
 
-                    // Thông báo kết quả
                     if (isSuccess) {
-                        JOptionPane.showMessageDialog(this, "Duyệt phiếu xuất thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
+                        JOptionPane.showMessageDialog(this, "Duyệt phiếu nhập thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
+
+                        DaoSP daoSP = new DaoSP();
+                        for (ChiTietPhieuXuatDTO chiTiet : chiTietList) {
+                            String maSP = chiTiet.getMaSP();
+                            int soLuongNhap = chiTiet.getSoLuong();
+                            boolean found = false;
+                            for (SanPhamDTO sp : sanPhamList) {
+                                if (sp.getMaSP().equals(maSP)) {
+                                    sp.setSoLuong(sp.getSoLuong() - soLuongNhap);
+                                    if (daoSP.suaSanPham(sp)) {
+                                        System.out.println("Cập nhật sản phẩm: " + maSP + ", Số lượng mới: " + sp.getSoLuong());
+                                    } else {
+                                        System.out.println("Lỗi khi cập nhật sản phẩm: " + maSP);
+                                    }
+                                    found = true;
+                                    break;
+                                }
+                            }
+                            if (!found) {
+                                System.out.println("Không tìm thấy sản phẩm với mã: " + maSP);
+                            }
+                        }
+                        sanPhamList = daoSP.layDanhSachSanPham();
+
                     } else {
-                        JOptionPane.showMessageDialog(this, "Lỗi khi duyệt phiếu xuất!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                        JOptionPane.showMessageDialog(this, "Lỗi khi duyệt phiếu nhập!", "Lỗi", JOptionPane.ERROR_MESSAGE);
                     }
+                } else {
+                    JOptionPane.showMessageDialog(this, "Không thể duyệt phiếu này!", "Thông báo", JOptionPane.ERROR_MESSAGE);
                 }
-            } else {
-                JOptionPane.showMessageDialog(this, "Vai trò không hợp lệ!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+
+
             }
         });
 
         // Nút "Xuất" (export)
-        functionBar.setButtonActionListener("export", () -> {
-            JOptionPane.showMessageDialog(this, "Chức năng xuất phiếu xuất chưa được triển khai!",
-                    "Thông báo", JOptionPane.INFORMATION_MESSAGE);
-        });
+        functionBar.setButtonActionListener("export", this:: exportToExcel);
+
     }
+
+    private void exportToExcel() {
+        ExPhieuXuat.exportPhieuXuatToExcel("E:/DanhSachPhieuXuat.xlsx"); // Dùng / thay cho \\
+    }
+
 
     private JPanel createSearchPanel() {
         JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 0));

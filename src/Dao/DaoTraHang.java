@@ -1,6 +1,7 @@
 package Dao;
 
 import Config.Mysql;
+import DTO.ChiTietPhieuXuatDTO;
 import DTO.TraHangDTO;
 import Repository.TraHangRepo;
 import org.apache.poi.ss.usermodel.*;
@@ -37,6 +38,7 @@ public class DaoTraHang implements TraHangRepo {
             return false;
         }
     }
+
 
     @Override
     public boolean suaTraHang(TraHangDTO traHang) {
@@ -254,6 +256,72 @@ public class DaoTraHang implements TraHangRepo {
         return ma.toString(); // Ví dụ: TH_X7A9F2
     }
 
+
+
+    public boolean keToanDuyetTraHang(TraHangDTO traHangDTO) {
+        String sql = "UPDATE trahang SET TrangThai = ? WHERE MaTraHang = ?";
+        try (Connection conn = Mysql.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, "Hoàn thành");
+            stmt.setString(2, traHangDTO.getMaTraHang());
+            int rowsAffected = stmt.executeUpdate();
+            return rowsAffected > 0;
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(null, "Lỗi khi duyệt phiếu nhập: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+    }
+
+    public boolean duyetPhieuTraHang(TraHangDTO traHangDTO) {
+        String sql = "UPDATE trahang SET TrangThai = ? WHERE MaTraHang = ?";
+        try (Connection conn = Mysql.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, "Quản lý duyệt");
+            stmt.setString(2, traHangDTO.getMaTraHang());
+            int rowsAffected = stmt.executeUpdate();
+            return rowsAffected > 0;
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(null, "Lỗi khi duyệt phiếu nhập: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+    }
+
+
+    public boolean huyDuyetPhieuTraHang(TraHangDTO phieuTraHang) {
+        String sql = "UPDATE trahang SET TrangThai = ? WHERE MaTraHang = ?";
+        try (Connection conn = Mysql.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, "Không duyệt");
+            stmt.setString(2, phieuTraHang.getMaTraHang());
+            int rowsAffected = stmt.executeUpdate();
+            return rowsAffected > 0;
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(null, "Lỗi khi cập nhật phiếu trả hàng: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+    }
+
+
+    public float tinhTongTienHoanTraDaDuyet() {
+        float tongTien = 0;
+        String sql = "SELECT SUM(TongTienHoanTra) AS TongTien FROM trahang WHERE TrangThai = 'Hoàn thành'";
+
+        try (Connection conn = Mysql.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+
+            if (rs.next()) {
+                tongTien = rs.getFloat("TongTien");
+            }
+
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(null,
+                    "Lỗi khi tính tổng tiền hoàn trả đã duyệt: " + e.getMessage(),
+                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
+
+        return tongTien;
+    }
 
 
 

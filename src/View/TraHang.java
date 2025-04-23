@@ -4,17 +4,19 @@
  */
 package View;
 import Config.Session;
+import DTO.ChiTietPhieuXuatDTO;
 import DTO.PXDTO;
 import DTO.SanPhamDTO;
 import DTO.TraHangDTO;
-import Dao.DaoNV;
+import Dao.DaoChiTietPhieuXuat;
 import Dao.DaoPhieuXuat;
 import Dao.DaoSP;
 import Dao.DaoTraHang;
+
+import EX.ExTraHang;
 import Gui.MainFunction;
-import Repository.SanPhamRepo;
 import Repository.TraHangRepo;
-import View.Dialog.ChiTietSanPham;
+import View.Dialog.ChiTietTraHang;
 import com.formdev.flatlaf.FlatLightLaf;
 
 import javax.swing.*;
@@ -25,9 +27,8 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -46,8 +47,22 @@ public class TraHang extends JPanel {
     private JButton btnRefresh;
     private Color backgroundColor = new Color(240, 247, 250);
     private Color accentColor = new Color(52, 73, 94);
+    private List<TraHangDTO> exportEntries;
+    private List<SanPhamDTO> sanPhamList;
+
+
 
     public TraHang() {
+        exportEntries = new ArrayList<>(); // Khởi tạo rỗng nếu không có dữ liệu\
+        sanPhamList=new ArrayList<>();
+
+        DaoSP daoSP = new DaoSP();
+        sanPhamList = daoSP.layDanhSachSanPham();
+        if (sanPhamList == null) {
+            sanPhamList = new ArrayList<>(); // Đảm bảo không null
+            System.out.println("Danh sách sản phẩm rỗng hoặc không tải được!");
+        }
+
         FlatLightLaf.setup();
 
         // Configure JPanel layout
@@ -63,6 +78,8 @@ public class TraHang extends JPanel {
 
         // Set background color for the panel
         setBackground(backgroundColor);
+        createTopPanel();
+        loadData();
     }
 
     private JPanel createTopPanel() {
@@ -79,10 +96,132 @@ public class TraHang extends JPanel {
         topPanel.add(searchPanel, BorderLayout.EAST);
 
         functionBar.setButtonActionListener("create", this::showAddPhieuTraDialog);
-//        functionBar.setButtonActionListener("update", this::showEditProductDialog);
-//        functionBar.setButtonActionListener("delete",this::DeleteProduct);
-//        functionBar.setButtonActionListener("detail",this::showCustomerDetails);
-//        functionBar.setButtonActionListener("export", this:: exportToExcel);
+        functionBar.setButtonActionListener("detail",this::showTraHangDetails);
+        functionBar.setButtonActionListener("export", this:: exportToExcel);
+
+        functionBar.setButtonActionListener("cancel", () -> {
+            int selectedRow = table.getSelectedRow();
+            if (selectedRow == -1) {
+                JOptionPane.showMessageDialog(this, "Vui lòng chọn một phiếu trả hàng để hủy duyệt!",
+                        "Cảnh báo", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+
+            TraHangDTO selectedPhieuTraHang = exportEntries.get(selectedRow);
+            String status = selectedPhieuTraHang.getTrangThai();
+
+            // Kiểm tra quyền
+            if (Session.getRole() == 1) {
+                JOptionPane.showMessageDialog(this, "Không đủ quyền để hủy duyệt",
+                        "Thông báo", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            // Kiểm tra vai trò 2 hoặc 3 và trạng thái hợp lệ
+            if (Session.getRole() == 2 || Session.getRole() == 3) {
+                if ("Hoàn thành".equals(status) || "Không duyệt".equals(status) || "Kế toán duyệt".equals(status)) {
+                    JOptionPane.showMessageDialog(this, "Không thể hủy phiếu trả hàng này!",
+                            "Lỗi", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                // Cập nhật database trước
+                DaoTraHang daoTraHang = new DaoTraHang();
+                boolean isSuccess = daoTraHang.huyDuyetPhieuTraHang(selectedPhieuTraHang);
+
+                // Cập nhật giao diện và đối tượng nếu thành công
+                if (isSuccess) {
+                    selectedPhieuTraHang.setTrangThai("Không duyệt");
+                    table.setValueAt("Không duyệt", selectedRow, 7);
+                    JOptionPane.showMessageDialog(this, "Hủy duyệt phiếu trả hàng thành công!",
+                            "Thành công", JOptionPane.INFORMATION_MESSAGE);
+                } else {
+                    JOptionPane.showMessageDialog(this, "Lỗi khi hủy duyệt phiếu trả hàng!",
+                            "Lỗi", JOptionPane.ERROR_MESSAGE);
+                }
+            } else {
+                JOptionPane.showMessageDialog(this, "Vai trò không hợp lệ để hủy duyệt!",
+                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+
+        functionBar.setButtonActionListener("sucess", () -> {
+            int selectedRow = table.getSelectedRow();
+            if (selectedRow == -1) {
+                JOptionPane.showMessageDialog(this, "Vui lòng chọn một phiếu xuất để duyệt!",
+                        "Cảnh báo", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+
+            TraHangDTO selectedPhieuXuat = exportEntries.get(selectedRow);
+            String status = selectedPhieuXuat.getTrangThai();
+
+            if (Session.getRole() == 1) {
+                JOptionPane.showMessageDialog(this, "Không đủ thẩm quyền để duyệt!", "Thông báo", JOptionPane.ERROR_MESSAGE);
+            } else if (Session.getRole() == 2) {
+                if("Quản lý duyệt".equals(status)) {
+                    DaoTraHang daoTraHang=new DaoTraHang();
+                    DaoChiTietPhieuXuat daoChiTietPhieuXuat =new DaoChiTietPhieuXuat();
+                    List<ChiTietPhieuXuatDTO> chiTietList = daoChiTietPhieuXuat.layChiTietPhieuXuatTheoMaPX(selectedPhieuXuat.getMaPX());
+
+                    table.setValueAt("Hoàn thành", selectedRow, 7);
+                    selectedPhieuXuat.setTrangThai("Hoàn thành");
+
+
+                    boolean isSuccess =daoTraHang.keToanDuyetTraHang(selectedPhieuXuat);
+
+                    if (isSuccess) {
+                        JOptionPane.showMessageDialog(this, "Duyệt phiếu nhập thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
+
+                        DaoSP daoSP = new DaoSP();
+                        for (ChiTietPhieuXuatDTO chiTiet : chiTietList) {
+                            String maSP = chiTiet.getMaSP();
+                            int soLuongNhap = chiTiet.getSoLuong();
+                            boolean found = false;
+                            for (SanPhamDTO sp : sanPhamList) {
+                                if (sp.getMaSP().equals(maSP)) {
+                                    sp.setSoLuong(sp.getSoLuong() - soLuongNhap);
+                                    if (daoSP.suaSanPham(sp)) {
+                                        System.out.println("Cập nhật sản phẩm: " + maSP + ", Số lượng mới: " + sp.getSoLuong());
+                                    } else {
+                                        System.out.println("Lỗi khi cập nhật sản phẩm: " + maSP);
+                                    }
+                                    found = true;
+                                    break;
+                                }
+                            }
+                            if (!found) {
+                                System.out.println("Không tìm thấy sản phẩm với mã: " + maSP);
+                            }
+                        }
+                        sanPhamList = daoSP.layDanhSachSanPham();
+                }
+
+                }else {
+                    JOptionPane.showMessageDialog(this, "Không thể duyệt phiếu này!", "Thông báo", JOptionPane.ERROR_MESSAGE);
+                }
+            }else if (Session.getRole() == 3) {
+                if ("Chưa duyệt".equals(status)) {
+                    table.setValueAt("Quản lý duyệt", selectedRow, 7); // Cột 5 là cột trạng thái
+                    selectedPhieuXuat.setTrangThai("Quản lý duyệt");
+
+                    // Gọi DAO để cập nhật trạng thái "Hoàn thành" trong cơ sở dữ liệu
+                    DaoTraHang daoTraHang=new DaoTraHang();
+                    boolean isSuccess = daoTraHang.duyetPhieuTraHang(selectedPhieuXuat);
+
+                    // Thông báo kết quả
+                    if (isSuccess) {
+                        JOptionPane.showMessageDialog(this, "Duyệt phiếu xuất thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
+                    } else {
+                        JOptionPane.showMessageDialog(this, "Lỗi khi duyệt phiếu trả hàng!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                    }
+                } else{
+                    JOptionPane.showMessageDialog(this, "Phiếu xuất này đã được duyệt!", "Thông báo", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        });
 
 
         return topPanel;
@@ -121,7 +260,7 @@ public class TraHang extends JPanel {
         JComboBox<String> cbMaPX = new JComboBox<>();
         JTextArea taLyDoTra = new JTextArea(3, 20);
         JTextField tfTongTienHoanTra = new JTextField();
-        JTextField  cbTrangThai = new JTextField ("Chờ xử lý");
+        JTextField  cbTrangThai = new JTextField ("Chưa duyệt");
 
         // Lấy danh sách MaPX từ phiếu xuất đã hoàn thành và chưa được trả
         DaoPhieuXuat daoPhieuXuat = new DaoPhieuXuat();
@@ -360,28 +499,11 @@ public class TraHang extends JPanel {
 
         dialog.setVisible(true);
     }
-    private void showCustomerDetails() {
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow == -1) {
-            JOptionPane.showMessageDialog(this, "Vui lòng chọn một sản phẩm để xem chi tiết!", "Cảnh báo", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-
-        int modelRow = table.convertRowIndexToModel(selectedRow);
-        String id = table.getValueAt(modelRow, 0).toString();
-        String name = table.getValueAt(modelRow, 1).toString();
-        String quantity = table.getValueAt(modelRow, 2).toString();
-        String state = table.getValueAt(modelRow, 3).toString();
-        String expiryDate = table.getValueAt(modelRow, 4).toString();
-        String PriceN = table.getValueAt(modelRow, 5).toString();
-        String PriceX = table.getValueAt(modelRow, 6).toString();
 
 
-
-        ChiTietSanPham detailDialog = new ChiTietSanPham(id, name, quantity, state,expiryDate, PriceN,PriceX);
-        detailDialog.setVisible(true);
+    private void exportToExcel() {
+        ExTraHang.exportTraHangToExcel("E:/DanhSachTraHang.xlsx");
     }
-
 
 
     private JScrollPane createTable() {
@@ -391,7 +513,7 @@ public class TraHang extends JPanel {
         tablePanel.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
 
         // Columns
-        String[] columns = {"Mã SP", "Mã phiếu xuất","Nhân viên", "Khách hàng" ,"Ngày trả", "Lý do","Tổng tiền hoàn trả", "Tình trạng"};
+        String[] columns = {"Mã trả hàng", "Mã phiếu xuất","Nhân viên", "Khách hàng" ,"Ngày trả", "Lý do","Tổng tiền hoàn trả", "Tình trạng"};
 
         // Tạo model với 0 row ban đầu
         DefaultTableModel model = new DefaultTableModel(columns, 0) {
@@ -531,6 +653,37 @@ public class TraHang extends JPanel {
         // Cài đặt bộ lọc với regex không phân biệt chữ hoa chữ thường
         RowFilter<TableModel, Object> rf = RowFilter.regexFilter("(?i)" + searchText, columnIndices);
         sorter.setRowFilter(rf); // Áp dụng bộ lọc
+    }
+
+    private void showTraHangDetails() {
+        int selectedRow = table.getSelectedRow();
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn một trả hàng để xem chi tiết!", "Cảnh báo", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        int modelRow = table.convertRowIndexToModel(selectedRow);
+        String maTraHang = table.getValueAt(modelRow, 0).toString();
+        String maPX = table.getValueAt(modelRow, 1).toString();
+        String maNV = table.getValueAt(modelRow, 2).toString();
+        String maKH = table.getValueAt(modelRow, 3).toString();
+        String ngayTra = table.getValueAt(modelRow, 4).toString();
+        String lyDoTra = table.getValueAt(modelRow, 5).toString();
+        String tongTienHoanTra = table.getValueAt(modelRow, 6).toString();
+        String trangThai = table.getValueAt(modelRow, 7).toString();
+
+        TraHangDTO traHang = new TraHangDTO(maTraHang, maPX, maNV, maKH, ngayTra, lyDoTra, Float.parseFloat(tongTienHoanTra), trangThai);
+        ChiTietTraHang detailDialog = new ChiTietTraHang(traHang);
+        detailDialog.setVisible(true);
+    }
+
+    private void loadData() {
+        DaoTraHang daoTraHang = new DaoTraHang();
+        exportEntries = daoTraHang.layDanhSachTraHang();
+        if (exportEntries == null) {
+            exportEntries = new ArrayList<>();
+        }
+        System.out.println("Loaded " + exportEntries.size() + " TraHang records.");
     }
 
 

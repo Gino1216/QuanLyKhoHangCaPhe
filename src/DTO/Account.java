@@ -1,18 +1,8 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package DTO;
-
-/**
- *
- * @author hjepr
- */
 
 import Config.Session;
 
 public class Account {
-
     private String MaNV;
     private String username;
     private String password;
@@ -26,7 +16,7 @@ public class Account {
         this.username = username;
         this.password = password;
         this.role = role;
-        saveToSession(); // Lưu tự động vào Session
+        saveToSession();
     }
 
     public Account(String maNV, int role, String username, String password) {
@@ -34,11 +24,12 @@ public class Account {
         this.username = username;
         this.password = password;
         this.role = role;
-        saveToSession(); // Lưu tự động vào Session
+        // Không gọi saveToSession
     }
 
-    // Phương thức lưu tự động vào Session
-    private void saveToSession() {
+    // Phương thức lưu vào Session (chỉ gọi khi đăng nhập)
+    public void saveToSession() {
+        System.out.println("Saving to session: username=" + this.username + ", role=" + this.role);
         Session.setUsername(this.username);
         Session.setRole(this.role);
     }
@@ -58,7 +49,7 @@ public class Account {
 
     public void setUsername(String username) {
         this.username = username;
-        saveToSession(); // Cập nhật Session khi thay đổi username
+        // Không gọi saveToSession
     }
 
     public String getPassword() {
@@ -75,6 +66,6 @@ public class Account {
 
     public void setRole(int role) {
         this.role = role;
-        saveToSession(); // Cập nhật Session khi thay đổi role
+        // Không gọi saveToSession
     }
 }

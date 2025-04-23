@@ -1,14 +1,9 @@
 package View;
 
 import Config.Session;
-import DTO.Account;
-import DTO.ChiTietPhieuNhapDTO;
-import DTO.NhaCungCapDTO;
-import DTO.PNDTO;
-import Dao.DaoAccount;
-import Dao.DaoChiTietPhieuNhap;
-import Dao.DaoNCC;
-import Dao.DaoPhieuNhap;
+import DTO.*;
+import Dao.*;
+import EX.ExPhieuNhap;
 import Repository.PhieuNhapRepo;
 import Gui.InputDate;
 import Gui.MainFunction;
@@ -36,7 +31,8 @@ public class PhieuNhap extends JPanel {
     private InputDate dateStart, dateEnd;
     private Color backgroundColor = new Color(255, 255, 255);
     private List<PNDTO> importEntries;
-    private JTextField txtReceiptId;
+    private List<SanPhamDTO> sanPhamList;
+
 
     private JComboBox<String> cbbSupplier;
     private JComboBox<String> cbbEmployee;
@@ -44,9 +40,17 @@ public class PhieuNhap extends JPanel {
     private JTextField txtToAmount;
 
     public PhieuNhap() {
+        sanPhamList = new ArrayList<>();
         importEntries = new ArrayList<>();
         setLayout(new BorderLayout(0, 8));
         setBackground(backgroundColor);
+
+        DaoSP daoSP = new DaoSP();
+        sanPhamList = daoSP.layDanhSachSanPham();
+        if (sanPhamList == null) {
+            sanPhamList = new ArrayList<>(); // Đảm bảo không null
+            System.out.println("Danh sách sản phẩm rỗng hoặc không tải được!");
+        }
 
         // Top Panel (Toolbar and Search)
         JPanel topPanel = new JPanel(new BorderLayout());
@@ -107,6 +111,10 @@ public class PhieuNhap extends JPanel {
         } else {
             JOptionPane.showMessageDialog(this, "Mã phiếu nhập đã tồn tại!", "Lỗi", JOptionPane.ERROR_MESSAGE);
         }
+    }
+
+    private void exportToExcel() {
+        ExPhieuNhap.exportPhieuNhapToExcel("E:/DanhSachPhieuNhap.xlsx"); // Dùng / thay cho \\
     }
 
     private void setupFunctionBarActions() {
@@ -174,12 +182,10 @@ public class PhieuNhap extends JPanel {
 
             if (Session.getRole() == 1) {
                 JOptionPane.showMessageDialog(this, "Không đủ quyền để hủy", "Thông báo", JOptionPane.ERROR_MESSAGE);
-            } else {
-                if ("Hoàn thành".equals(status)) {
-                    JOptionPane.showMessageDialog(this, "Không thể hủy phiếu đã duyệt!", "Lỗi", JOptionPane.ERROR_MESSAGE);
-                } else if ("Không duyệt".equals(status)) {
-                    JOptionPane.showMessageDialog(this, "Không thể hủy phiếu đã hủy!", "Lỗi", JOptionPane.ERROR_MESSAGE);
-                } else {
+            } else if(Session.getRole()==2 || Session.getRole() ==3) {
+                if ("Hoàn thành".equals(status)||"Không duyệt".equals(status) || "Kế toán duyệt".equals(status)) {
+                    JOptionPane.showMessageDialog(this, "Không thể hủy phiếu này!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                }else {
                     table.setValueAt("Không duyệt", selectedRow, 5);
                     selectedPhieuNhap.setTrangThai("Không duyệt");
 
@@ -206,17 +212,12 @@ public class PhieuNhap extends JPanel {
 
             PNDTO selectedPhieuNhap = importEntries.get(selectedRow);
             String status = selectedPhieuNhap.getTrangThai();
+            System.out.println("Status: " + status);
 
             if (Session.getRole() == 1) {
                 JOptionPane.showMessageDialog(this, "Không đủ thẩm quyền để duyệt!", "Thông báo", JOptionPane.ERROR_MESSAGE);
             } else if (Session.getRole() == 2) {
-                if ("Hoàn thành".equals(status)) {
-                    JOptionPane.showMessageDialog(this, "Phiếu nhập này đã được duyệt!", "Thông báo", JOptionPane.ERROR_MESSAGE);
-                } else if ("Không duyệt".equals(status)) {
-                    JOptionPane.showMessageDialog(this, "Không thể duyệt phiếu đã hủy!", "Lỗi", JOptionPane.ERROR_MESSAGE);
-                } else if ("Kế toán duyệt".equals(status)) {
-                    JOptionPane.showMessageDialog(this, "Không thể duyệt phiếu đã duyệt!", "Lỗi", JOptionPane.ERROR_MESSAGE);
-                } else {
+                if ("Chưa duyệt".equals(status)) {
                     table.setValueAt("Kế toán duyệt", selectedRow, 5);
                     selectedPhieuNhap.setTrangThai("Kế toán duyệt");
 
@@ -228,13 +229,14 @@ public class PhieuNhap extends JPanel {
                     } else {
                         JOptionPane.showMessageDialog(this, "Lỗi khi kế toán duyệt phiếu nhập!", "Lỗi", JOptionPane.ERROR_MESSAGE);
                     }
-                }
-            } else if (Session.getRole() == 3) {
-                if ("Hoàn thành".equals(status)) {
-                    JOptionPane.showMessageDialog(this, "Phiếu nhập này đã được duyệt!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
-                } else if (!"Kế toán duyệt".equals(status)) {
-                    JOptionPane.showMessageDialog(this, "Phiếu nhập cần được kế toán duyệt trước!", "Lỗi", JOptionPane.ERROR_MESSAGE);
                 } else {
+                    JOptionPane.showMessageDialog(this, "Không thể duyệt phiếu này!", "Thông báo", JOptionPane.ERROR_MESSAGE);
+                }
+            } else {
+                DaoChiTietPhieuNhap daoChiTietPhieuNhap = new DaoChiTietPhieuNhap();
+                List<ChiTietPhieuNhapDTO> chiTietList = daoChiTietPhieuNhap.layChiTietPhieuNhapTheoMaPN(selectedPhieuNhap.getMaPN());
+
+                if ("Kế toán duyệt".equals(status)) {
                     table.setValueAt("Hoàn thành", selectedRow, 5);
                     selectedPhieuNhap.setTrangThai("Hoàn thành");
 
@@ -243,20 +245,41 @@ public class PhieuNhap extends JPanel {
 
                     if (isSuccess) {
                         JOptionPane.showMessageDialog(this, "Duyệt phiếu nhập thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
+
+                        DaoSP daoSP = new DaoSP();
+                        for (ChiTietPhieuNhapDTO chiTiet : chiTietList) {
+                            String maSP = chiTiet.getMaSP();
+                            int soLuongNhap = chiTiet.getSoLuong();
+                            boolean found = false;
+                            for (SanPhamDTO sp : sanPhamList) {
+                                if (sp.getMaSP().equals(maSP)) {
+                                    sp.setSoLuong(sp.getSoLuong() + soLuongNhap);
+                                    if (daoSP.suaSanPham(sp)) {
+                                        System.out.println("Cập nhật sản phẩm: " + maSP + ", Số lượng mới: " + sp.getSoLuong());
+                                    } else {
+                                        System.out.println("Lỗi khi cập nhật sản phẩm: " + maSP);
+                                    }
+                                    found = true;
+                                    break;
+                                }
+                            }
+                            if (!found) {
+                                System.out.println("Không tìm thấy sản phẩm với mã: " + maSP);
+                            }
+                        }
+                        sanPhamList = daoSP.layDanhSachSanPham();
+
                     } else {
                         JOptionPane.showMessageDialog(this, "Lỗi khi duyệt phiếu nhập!", "Lỗi", JOptionPane.ERROR_MESSAGE);
                     }
+                } else {
+                    JOptionPane.showMessageDialog(this, "Không thể duyệt phiếu này!", "Thông báo", JOptionPane.ERROR_MESSAGE);
                 }
-            } else {
-                JOptionPane.showMessageDialog(this, "Vai trò không hợp lệ!", "Lỗi", JOptionPane.ERROR_MESSAGE);
             }
         });
-
         // Nút "Xuất" (export)
-        functionBar.setButtonActionListener("export", () -> {
-            JOptionPane.showMessageDialog(this, "Chức năng xuất phiếu nhập chưa được triển khai!",
-                    "Thông báo", JOptionPane.INFORMATION_MESSAGE);
-        });
+        functionBar.setButtonActionListener("export", this:: exportToExcel);
+
     }
 
     private JPanel createSearchPanel() {

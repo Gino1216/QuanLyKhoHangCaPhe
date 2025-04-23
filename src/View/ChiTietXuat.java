@@ -1,32 +1,26 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package View;
 
 import DTO.ChiTietPhieuXuatDTO;
+import PDF.PDF; // Đảm bảo import đúng lớp PDF
 import com.formdev.flatlaf.FlatLightLaf;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.io.File;
 import java.util.List;
 
-/**
- *
- * @author hjepr
- */
 public class ChiTietXuat extends JFrame {
 
     private Color backgroundColor = new Color(255, 255, 255);
     private Color headerColor = new Color(0, 102, 204);
-    private Color buttonColor = new Color(0, 120, 215); // Màu xanh dương giống hình ảnh
-    private Color cancelButtonColor = new Color(255, 69, 58); // Màu đỏ giống hình ảnh
+    private Color buttonColor = new Color(0, 120, 215);
+    private Color cancelButtonColor = new Color(255, 69, 58);
 
     public ChiTietXuat(String exportId, String customer, String employee, String exportDate,
                        String totalAmount, String status, List<ChiTietPhieuXuatDTO> coffeeItems) {
         FlatLightLaf.setup();
         setTitle("Chi tiết phiếu xuất");
-        setSize(1200, 800); // Kích thước giống hình ảnh
+        setSize(1200, 800);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setLayout(new BorderLayout(0, 5));
@@ -46,7 +40,7 @@ public class ChiTietXuat extends JFrame {
         contentPanel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
 
         // Info panel (Thông tin phiếu xuất)
-        JPanel infoPanel = new JPanel(new GridLayout(1, 8, 5, 5)); // 1 hàng, 8 cột (4 nhãn + 4 giá trị)
+        JPanel infoPanel = new JPanel(new GridLayout(1, 8, 5, 5));
         infoPanel.setBackground(backgroundColor);
         infoPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 
@@ -96,67 +90,51 @@ public class ChiTietXuat extends JFrame {
 
         contentPanel.add(infoPanel, BorderLayout.NORTH);
 
-
         // Table of exported coffee products (Danh sách sản phẩm)
-        // Thêm cột "STT" vào mảng columns
         String[] columns = {"Mã phiếu xuất", "Mã sản phẩm", "Tên sản phẩm", "Số lượng (bao)", "Đơn giá", "Thành tiền"};
-
         DefaultTableModel tableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return false; // Không cho phép chỉnh sửa ô
+                return false;
             }
         };
 
-// Điền dữ liệu vào bảng
+        // Điền dữ liệu vào bảng và kiểm tra coffeeItems
         try {
-            for (ChiTietPhieuXuatDTO item : coffeeItems) {
-                Object[] row = {
-                        item.getMaPX(),
-                        item.getMaSP(),
-                        item.getSanPham(),
-                        item.getSoLuong(), // Số lượng
-                        String.format("%,.0f", item.getDonGia()), // Sửa thành %,.0f
-                        String.format("%,.0f", item.getDonGia() * item.getSoLuong()) // Sửa thành %,.0f
-                };
-                tableModel.addRow(row);
+            if (coffeeItems != null && !coffeeItems.isEmpty()) {
+                System.out.println("Đang điền dữ liệu vào bảng với " + coffeeItems.size() + " sản phẩm");
+                for (ChiTietPhieuXuatDTO item : coffeeItems) {
+                    System.out.println("Sản phẩm: " + item.getSanPham() + ", Số lượng: " + item.getSoLuong());
+                    Object[] row = {
+                            item.getMaPX(),
+                            item.getMaSP(),
+                            item.getSanPham(),
+                            item.getSoLuong(),
+                            String.format("%,.0f", item.getDonGia()),
+                            String.format("%,.0f", item.getDonGia() * item.getSoLuong())
+                    };
+                    tableModel.addRow(row);
+                }
+            } else {
+                System.out.println("coffeeItems is null or empty");
             }
         } catch (Exception e) {
             e.printStackTrace();
             JOptionPane.showMessageDialog(null, "Lỗi khi tải dữ liệu: " + e.getMessage());
         }
 
-
-
-
         JTable table = new JTable(tableModel);
         JScrollPane scrollPane = new JScrollPane(table);
-        add(scrollPane); // Thêm vào container cha
-        revalidate(); // Cập nhật giao diện
-
-        table.setRowHeight(35); // Chiều cao hàng giống PhieuXuat
-        table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 16)); // Font tiêu đề giống PhieuXuat
-        table.setFont(new Font("Segoe UI", Font.PLAIN, 14)); // Font nội dung giống PhieuXuat
-        table.setGridColor(new Color(200, 200, 200)); // Màu lưới giống PhieuXuat
-        table.setShowGrid(false); // Không hiển thị lưới giống PhieuXuat
-        table.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS); // Tự động điều chỉnh cột giống PhieuXuat
-
-        scrollPane.setBorder(BorderFactory.createLineBorder(Color.GRAY)); // Viền ngoài giống hình ảnh
+        table.setRowHeight(35);
+        table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 16));
+        table.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        table.setGridColor(new Color(200, 200, 200));
+        table.setShowGrid(false);
+        table.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
+        scrollPane.setBorder(BorderFactory.createLineBorder(Color.GRAY));
         contentPanel.add(scrollPane, BorderLayout.CENTER);
 
         add(contentPanel, BorderLayout.CENTER);
-
-
-
-
-
-
-
-
-
-
-
-
 
         // Button panel
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
@@ -169,8 +147,59 @@ public class ChiTietXuat extends JFrame {
         btnExportPDF.setFont(new Font("Segoe UI", Font.BOLD, 12));
         btnExportPDF.setPreferredSize(new Dimension(120, 30));
         btnExportPDF.addActionListener(e -> {
-            JOptionPane.showMessageDialog(this, "Chức năng xuất file PDF chưa được triển khai!",
-                    "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+            try {
+                // Tạo thư mục lưu file trong ổ E nếu chưa tồn tại
+                String directoryPath = "E:/";
+                File directory = new File(directoryPath);
+                if (!directory.exists()) {
+                    boolean created = directory.mkdirs(); // Tạo thư mục
+                    if (!created) {
+                        JOptionPane.showMessageDialog(this, "Không thể tạo thư mục " + directoryPath + " trong ổ E!",
+                                "Lỗi", JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+                }
+
+                // Định nghĩa đường dẫn file trong ổ E
+                String filePath = directoryPath + "PhieuXuat_" + exportId + ".pdf";
+
+                // Kiểm tra dữ liệu
+                String[] labels = {"Mã phiếu:", "Khách hàng:", "Nhân viên xuất:", "Thời gian tạo:", "Tổng tiền:"};
+                String[] values = {
+                        exportId != null ? exportId : "",
+                        customer != null ? customer : "",
+                        employee != null ? employee : "",
+                        exportDate != null ? exportDate : "",
+                        totalAmount != null ? totalAmount : ""
+                };
+
+                if (labels.length != values.length) {
+                    JOptionPane.showMessageDialog(this, "Số lượng nhãn và giá trị không khớp!",
+                            "Lỗi", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                // Kiểm tra coffeeItems trước khi xuất PDF
+                if (coffeeItems == null || coffeeItems.isEmpty()) {
+                    System.out.println("coffeeItems is null or empty when exporting PDF");
+                    JOptionPane.showMessageDialog(this, "Không có dữ liệu sản phẩm để xuất PDF!",
+                            "Cảnh báo", JOptionPane.WARNING_MESSAGE);
+                } else {
+                    System.out.println("Xuất PDF với " + coffeeItems.size() + " sản phẩm");
+                    for (ChiTietPhieuXuatDTO item : coffeeItems) {
+                        System.out.println("Sản phẩm trong PDF: " + item.getSanPham() + ", Số lượng: " + item.getSoLuong());
+                    }
+                }
+
+                // Xuất file PDF trực tiếp vào ổ E
+                PDF exporter = new PDF();
+                exporter.exportToPDF(this, "THÔNG TIN PHIẾU XUẤT", labels, values, coffeeItems, filePath);
+
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                JOptionPane.showMessageDialog(this, "Lỗi khi lưu file PDF vào ổ E: " + ex.getMessage(),
+                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+            }
         });
 
         JButton btnCancel = new JButton("Hủy bỏ");
