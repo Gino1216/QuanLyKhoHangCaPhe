@@ -16,6 +16,7 @@ import com.formdev.flatlaf.FlatLightLaf;
 import java.awt.*;
 import java.awt.event.*;
 import java.text.*;
+import java.util.Date;
 import java.util.List;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -42,7 +43,7 @@ public class KhachHang extends JPanel {
         topPanel.setBackground(backgroundColor);
         topPanel.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
 
-        functionBar = new MainFunction("khachhang", new String[]{"create", "update", "delete", "detail", "import", "export"});
+        functionBar = new MainFunction("khachhang", new String[]{"create", "update", "delete", "detail","export"});
         topPanel.add(functionBar, BorderLayout.WEST);
 
         JPanel searchPanel = createSearchPanel();
@@ -375,6 +376,7 @@ public class KhachHang extends JPanel {
                     }
                 });
             } else if (labels[i].equals("Ngày tham gia")) {
+                textFields[i].setEditable(false);
                 textFields[i].setText(joinDate.isEmpty() ? "dd/MM/yyyy" : joinDate);
                 textFields[i].setForeground(joinDate.isEmpty() ? Color.GRAY : Color.BLACK);
                 textFields[i].addFocusListener(new FocusAdapter() {
@@ -409,6 +411,7 @@ public class KhachHang extends JPanel {
                         break;
                     case 3:
                         textFields[i].setText(joinDate);
+
                         break;
                     case 4:
                         textFields[i].setText(email);
@@ -454,16 +457,15 @@ public class KhachHang extends JPanel {
             String newPhone = textFields[5].getText();
 
 
-            SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
-            dateFormat.setLenient(false);
+            String formattedHanSD;
             try {
-                if (!newJoinDate.equals("dd/MM/yyyy")) {
-                    dateFormat.parse(newJoinDate);
-                } else {
-                    newJoinDate = "";
-                }
+                SimpleDateFormat inputFormat = new SimpleDateFormat("dd/MM/yyyy");
+                SimpleDateFormat outputFormat = new SimpleDateFormat("yyyy-MM-dd");
+                inputFormat.setLenient(false);
+                Date date = inputFormat.parse(newJoinDate);
+                formattedHanSD = outputFormat.format(date);
             } catch (ParseException ex) {
-                JOptionPane.showMessageDialog(dialog, "Ngày tham gia phải có định dạng dd/MM/yyyy!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(dialog, "Hạn sử dụng phải có định dạng dd/MM/yyyy hợp lệ!", "Lỗi", JOptionPane.ERROR_MESSAGE);
                 return;
             }
 

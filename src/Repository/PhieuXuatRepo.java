@@ -17,8 +17,6 @@ public interface PhieuXuatRepo {
 
     boolean kiemTraMaPXTonTai(String MaPX);
 
-//    int demSoLuongDonHang();
-
     List<PXDTO>layDanhSachPhieuXuatTheoMaPXVaTrangThaiHoanThanh(String maPX);
 
     void themMaPxVaTT(String maPX);

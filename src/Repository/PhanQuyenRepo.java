@@ -13,7 +13,6 @@ public interface PhanQuyenRepo {
 
     boolean xoaQuyen(int maQuyen);
 
-    List<PhanQuyenDTO> timKiemQuyen(String keyword);
 
     boolean kiemTraMaQuyenTonTai(int maQuyen);
 

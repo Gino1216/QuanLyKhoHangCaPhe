@@ -3,7 +3,6 @@ package View;
 import Config.Session;
 import DTO.*;
 import Dao.*;
-import EX.ExPhieuNhap;
 import EX.ExPhieuXuat;
 import Repository.PhieuXuatRepo;
 import Gui.InputDate;
@@ -597,5 +596,10 @@ public class PhieuXuat extends JPanel {
         } else {
             sorter.setRowFilter(RowFilter.andFilter(filters));
         }
+    }
+
+
+    public void reloadTable() {
+        loadTableData(tableModel);
     }
 }

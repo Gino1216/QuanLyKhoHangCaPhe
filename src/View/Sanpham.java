@@ -5,7 +5,6 @@
 package View;
 
 import Config.Session;
-import Controller.SanphamController;
 import DTO.SanPhamDTO;
 import Dao.DaoSP;
 import Gui.MainFunction;
@@ -27,7 +26,6 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.FileOutputStream;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -96,7 +94,7 @@ public class Sanpham extends JPanel {
         topPanel.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
 
         // Initialize main function toolbar
-        functionBar = new MainFunction("ncc", new String[]{"create", "update", "delete", "detail", "import", "export"});
+        functionBar = new MainFunction("ncc", new String[]{"create", "update", "delete", "detail", "export"});
         topPanel.add(functionBar, BorderLayout.WEST);
 
         // Create and add search/filter panel to the top panel
@@ -280,10 +278,6 @@ public class Sanpham extends JPanel {
         btnAdd.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-
-                SanphamController handler = new SanphamController();
-                handler.handleAddProduct();
-
                 // Kiểm tra dữ liệu đầu vào
                 String maSP = textFields[0].getText().trim();
                 String tenSP = textFields[1].getText().trim();
@@ -384,11 +378,9 @@ public class Sanpham extends JPanel {
         dialog.add(buttonPanel, BorderLayout.SOUTH);
 
         dialog.setVisible(true);
+        table.setRowSorter(null);
+
     }
-
-
-
-
 
     private void showEditProductDialog() {
         int selectedRow = table.getSelectedRow();
@@ -829,10 +821,6 @@ public class Sanpham extends JPanel {
 
 
 
-
-
-
-
     private void DeleteProduct() {
         int selectedRow = table.getSelectedRow();
         if (selectedRow < 0) {
@@ -894,7 +882,6 @@ public class Sanpham extends JPanel {
 
     // Kiểm tra có thể xóa (nếu cần)
     private boolean kiemTraCoTheXoa(String maSP) {
-        // Thêm logic kiểm tra nếu cần
         return true;
     }
 

@@ -114,7 +114,7 @@ public class ChiTietNhap extends JFrame {
                 Object[] row = {
                         item.getMaPN(),
                         item.getMaSP(),
-                        item.getMaPN(),
+                        item.getTenSP(),
                         item.getSoLuong(), // Số lượng
                         String.format("%,.0f", item.getDonGia()),
                         String.format("%,.0f", item.getDonGia() * item.getSoLuong())

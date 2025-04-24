@@ -8,7 +8,6 @@ public interface ChiTietPhieuNhapRepo {
 
     void themChiTietPhieuNhap(ChiTietPhieuNhapDTO ct);
 
-    boolean suaChiTietPhieuNhap(ChiTietPhieuNhapDTO  ct);
 
     boolean xoaChiTietPhieuNhap(String maPN, String maSP);
 

@@ -48,10 +48,13 @@ public class DashBoard extends JPanel {
         DaoPhieuXuat daoPhieuXuat =new DaoPhieuXuat();
         DaoPhieuNhap daoPhieuNhap =new DaoPhieuNhap();
         DaoTraHang daoTraHang =new DaoTraHang();
+        System.out.println(daoPhieuXuat.tinhTongTienPXDaDuyet());
+        System.out.println(daoPhieuNhap.tinhTongTienPNDaDuyet());
+        System.out.println(daoTraHang.tinhTongTienHoanTraDaDuyet());
+
         float Tien = daoPhieuXuat.tinhTongTienPXDaDuyet() - daoPhieuNhap.tinhTongTienPNDaDuyet() - daoTraHang.tinhTongTienHoanTraDaDuyet();
 
-        summaryPanel.add(createSummaryCard("Doanh Thu", String.valueOf(Tien)+" VND", new Color(0, 168, 150)));
-
+        summaryPanel.add(createSummaryCard("Doanh Thu", String.format("%.1f VND", Tien), new Color(0, 168, 150)));
         int countPN =daoPhieuNhap.demSoLuongPNchuaDuyet();
         summaryPanel.add(createSummaryCard("Số đơn nhập chưa duyệt", String.valueOf(countPN)+" đơn", new Color(255, 193, 7)));
 

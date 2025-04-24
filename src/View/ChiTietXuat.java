@@ -1,7 +1,7 @@
 package View;
 
 import DTO.ChiTietPhieuXuatDTO;
-import PDF.PDF; // Đảm bảo import đúng lớp PDF
+import PDF.PDF;
 import com.formdev.flatlaf.FlatLightLaf;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;

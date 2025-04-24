@@ -110,29 +110,7 @@ public class DaoAccount implements AccountRepo {
         }
     }
 
-    @Override
-    public List<Account> timKiemAccount(String keyword) {
-        List<Account> result = new ArrayList<>();
-        String sql = "SELECT * FROM taikhoan WHERE username LIKE ?";
-        try (Connection conn = Mysql.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setString(1, "%" + keyword + "%");
-            try (ResultSet rs = stmt.executeQuery()) {
-                while (rs.next()) {
-                    Account acc = new Account(
-                            rs.getString("username"),
-                            rs.getString("pass"),
-                            rs.getInt("MaQuyen")
-                    );
-                    result.add(acc);
-                }
-            }
-        } catch (SQLException e) {
-            JOptionPane.showMessageDialog(null, "Lỗi khi tìm kiếm tài khoản: " + e.getMessage(),
-                    "Lỗi", JOptionPane.ERROR_MESSAGE);
-        }
-        return result;
-    }
+
 
     @Override
     public List<Account> layDanhSachAccount() {

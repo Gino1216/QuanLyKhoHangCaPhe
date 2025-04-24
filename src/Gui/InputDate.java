@@ -75,4 +75,6 @@ public class InputDate extends JPanel {
         JTextFieldDateEditor editor = (JTextFieldDateEditor) date.getDateEditor();
         editor.setEditable(false);
     }
+
+
 }

@@ -17,7 +17,6 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 
 import java.util.List;
-import java.util.Map;
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -41,7 +40,6 @@ public class PhanQuyen extends JPanel {
 
 
     // Map để lưu trữ danh sách quyền cho từng nhóm quyền
-    private Map<String, Object[][]> permissionDetailsMap;
 
     public PhanQuyen() {
         // Khởi tạo Map và dữ liệu giả lập
@@ -74,7 +72,7 @@ public class PhanQuyen extends JPanel {
         topPanel.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
 
         // Initialize main function toolbar
-        functionBar = new MainFunction("phanquyen", new String[]{"create", "update", "delete", "detail", "import", "export"});
+        functionBar = new MainFunction("phanquyen", new String[]{"create", "update", "delete", "detail", "export"});
         topPanel.add(functionBar, BorderLayout.WEST);
 
         // Create and add search/filter panel to the top panel
@@ -86,7 +84,6 @@ public class PhanQuyen extends JPanel {
         functionBar.setButtonActionListener("update", this::showEditPermissionDialog);
         functionBar.setButtonActionListener("detail", this::showPermissionDetailDialog);
         functionBar.setButtonActionListener("delete", this::deletePermission);
-        functionBar.setButtonActionListener("import", this::importPermissions);
         functionBar.setButtonActionListener("export", this::exportToExcel);
 
         return topPanel;
@@ -187,10 +184,6 @@ public class PhanQuyen extends JPanel {
 
 
 
-
-    private void importPermissions() {
-        JOptionPane.showMessageDialog(this, "Chức năng nhập nhóm quyền chưa được triển khai!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
-    }
 
 
     public void showAddPermissionDialog() {

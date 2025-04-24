@@ -468,8 +468,10 @@ public class CreaterPhieuNhap extends JFrame {
             // Gọi capNhatPhieuNhap để lưu phiếu nhập vào database
             boolean success = daoPhieuNhap.capNhatPhieuNhap(receiptId, supplierId, Session.getUsername(), totalAmount);
 
+
             if (success) {
                 JOptionPane.showMessageDialog(this, "Nhập hàng thành công!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+                parent.reloadTable(); // Gọi reload bảng từ parent
                 dispose();
             } else {
                 JOptionPane.showMessageDialog(this, "Nhập hàng thất bại!", "Lỗi", JOptionPane.ERROR_MESSAGE);

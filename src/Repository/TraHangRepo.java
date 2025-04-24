@@ -8,13 +8,6 @@ public interface TraHangRepo {
 
     boolean themTraHang(TraHangDTO traHang);
 
-    boolean suaTraHang(TraHangDTO traHang);
-
-    boolean xoaTraHang(String maTraHang);
-
-    TraHangDTO timTheoMa(String maTraHang);
-
-    List<TraHangDTO> timKiemTraHang(String keyword);
 
     List<TraHangDTO> layDanhSachTraHang();
 

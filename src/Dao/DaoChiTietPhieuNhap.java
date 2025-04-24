@@ -30,28 +30,7 @@ public class DaoChiTietPhieuNhap implements ChiTietPhieuNhapRepo {
         }
     }
 
-    @Override
-    public boolean suaChiTietPhieuNhap(ChiTietPhieuNhapDTO ct) {
-        String sql = "UPDATE chitietpn SET TenSP = ?, SoLuong = ?, DonGia = ?, ThanhTien = ? WHERE MaPN = ? AND MaSP = ?";
-        try (Connection conn = Mysql.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setString(1, ct.getTenSP());
-            stmt.setInt(2, ct.getSoLuong());
-            stmt.setFloat(3, ct.getDonGia());
-            stmt.setFloat(4, ct.getThanhTien());
-            stmt.setString(5, ct.getMaPN());
-            stmt.setString(6, ct.getMaSP());
-            int rows = stmt.executeUpdate();
-            if (rows > 0) {
-                JOptionPane.showMessageDialog(null, "Cập nhật chi tiết PN thành công!");
-                return true;
-            }
-        } catch (SQLException e) {
-            JOptionPane.showMessageDialog(null, "Lỗi khi cập nhật: " + e.getMessage(),
-                    "Lỗi", JOptionPane.ERROR_MESSAGE);
-        }
-        return false;
-    }
+
 
     @Override
     public boolean xoaChiTietPhieuNhap(String maPN, String maSP) {

@@ -1,25 +1,18 @@
 package View;
 
 import DTO.Account;
-import DTO.NhanVienDTO;
 import DTO.PhanQuyenDTO;
-import DTO.SanPhamDTO;
+
 import Dao.DaoAccount;
 import Dao.DaoNV;
 import Dao.DaoPQ;
-import Dao.DaoSP;
 import EX.ExAccount;
-import EX.ExNhanVien;
 import Gui.MainFunction;
 import Repository.AccountRepo;
-import Repository.SanPhamRepo;
 import com.formdev.flatlaf.FlatLightLaf;
 
 import java.awt.*;
-import java.sql.SQLException;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -71,7 +64,7 @@ public class TaiKhoan extends JPanel {
         topPanel.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
 
         // Initialize main function toolbar
-        functionBar = new MainFunction("taikhoan", new String[]{"create", "update", "delete", "import", "export"});
+        functionBar = new MainFunction("taikhoan", new String[]{"create", "update", "delete","export"});
         topPanel.add(functionBar, BorderLayout.WEST);
 
         // Create and add search/filter panel to the top panel

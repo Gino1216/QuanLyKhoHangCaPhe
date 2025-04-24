@@ -72,32 +72,7 @@ public class DaoNCC implements NCCRepo {
         }
     }
 
-    @Override
-    public List<NhaCungCapDTO> timKiemNhaCungCap(String keyword) {
-        List<NhaCungCapDTO> ds = new ArrayList<>();
-        String sql = "SELECT * FROM nhacungcap WHERE MaNCC LIKE ? OR TenNCC LIKE ?";
-        try (Connection conn = Mysql.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            stmt.setString(1, "%" + keyword + "%");
-            stmt.setString(2, "%" + keyword + "%");
-
-            ResultSet rs = stmt.executeQuery();
-            while (rs.next()) {
-                ds.add(new NhaCungCapDTO(
-                        rs.getString("MaNCC"),
-                        rs.getString("TenNCC"),
-                        rs.getString("SoDT"),
-                        rs.getString("DiaChi"),
-                        rs.getString("Email"),
-                        rs.getString("TinhTrang")
-                ));
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return ds;
-    }
 
     @Override
     public List<NhaCungCapDTO> layDanhSachNhaCungCap() {

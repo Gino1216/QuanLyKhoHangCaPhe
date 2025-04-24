@@ -12,7 +12,6 @@ import java.util.List;
 
     boolean xoaNhaCungCap(String maNCC);
 
-    List<NhaCungCapDTO> timKiemNhaCungCap(String keyword);
 
     List<NhaCungCapDTO> layDanhSachNhaCungCap();
 

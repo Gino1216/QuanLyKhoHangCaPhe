@@ -555,4 +555,8 @@ public class PhieuNhap extends JPanel {
             sorter.setRowFilter(RowFilter.andFilter(filters));
         }
     }
+
+    public void reloadTable() {
+        loadTableData(tableModel);
+    }
 }

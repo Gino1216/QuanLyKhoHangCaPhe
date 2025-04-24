@@ -31,28 +31,6 @@ public class DaoChiTietPhieuXuat implements ChiTietPhieuXuatRepo {
         }
     }
 
-    @Override
-    public boolean suaChiTietPhieuXuat(ChiTietPhieuXuatDTO ct) {
-        String sql = "UPDATE chitietpx SET TenSP = ?, SoLuong = ?, DonGia = ?, ThanhTien = ? WHERE MaPX = ? AND MaSP = ?";
-        try (Connection conn = Mysql.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setString(1, ct.getSanPham());
-            stmt.setInt(2, ct.getSoLuong());
-            stmt.setFloat(3, ct.getDonGia());
-            stmt.setFloat(4, ct.getThanhTien());
-            stmt.setString(5, ct.getMaPX());
-            stmt.setString(6, ct.getMaSP());
-            int rows = stmt.executeUpdate();
-            if (rows > 0) {
-                JOptionPane.showMessageDialog(null, "Cập nhật chi tiết PX thành công!");
-                return true;
-            }
-        } catch (SQLException e) {
-            JOptionPane.showMessageDialog(null, "Lỗi khi cập nhật: " + e.getMessage(),
-                    "Lỗi", JOptionPane.ERROR_MESSAGE);
-        }
-        return false;
-    }
 
 
 

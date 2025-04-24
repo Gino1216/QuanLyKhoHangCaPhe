@@ -246,26 +246,7 @@ public class DaoPhieuNhap implements PhieuNhapRepo {
         return result;
     }
 
-    @Override
-    public void themMaPNVaTT(String MaPN) {
-        String sql = "INSERT INTO phieuxuat(MaPN) VALUES (?)";
 
-        try (Connection conn = Mysql.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-
-            stmt.setString(1, MaPN);
-            int affectedRows = stmt.executeUpdate(); // THÊM DÒNG NÀY
-
-            if (affectedRows == 0) {
-                throw new SQLException("Thêm mã phiếu xuất thất bại, không có dòng nào bị ảnh hưởng.");
-            }
-
-        } catch (SQLException e) {
-            throw new RuntimeException("Lỗi khi thêm mã phiếu xuất: " + e.getMessage(), e);
-        }
-
-
-    }
 
 
     public void themMaPnVaTT(String maPN) {

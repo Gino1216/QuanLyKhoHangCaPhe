@@ -28,11 +28,7 @@ public class Account {
     }
 
     // Phương thức lưu vào Session (chỉ gọi khi đăng nhập)
-    public void saveToSession() {
-        System.out.println("Saving to session: username=" + this.username + ", role=" + this.role);
-        Session.setUsername(this.username);
-        Session.setRole(this.role);
-    }
+
 
     // Getter và Setter
     public String getMaNV() {
@@ -67,5 +63,10 @@ public class Account {
     public void setRole(int role) {
         this.role = role;
         // Không gọi saveToSession
+    }
+
+    public void saveToSession() {
+        Session.setUsername(this.username);
+        Session.setRole(this.role);
     }
 }

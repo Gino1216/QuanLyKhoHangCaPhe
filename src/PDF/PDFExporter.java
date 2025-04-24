@@ -32,11 +32,6 @@ public class PDFExporter {
             contentStream.showText(title);
             contentStream.endText();
 
-            // Vẽ đường kẻ dưới tiêu đề
-            contentStream.setLineWidth(1f);
-            contentStream.moveTo(200, 740);
-            contentStream.lineTo(400, 740);
-            contentStream.stroke();
 
             // Nội dung chi tiết
             contentStream.beginText();
@@ -52,13 +47,7 @@ public class PDFExporter {
             contentStream.endText();
 
             // Vẽ khung xung quanh nội dung
-            contentStream.setLineWidth(1f);
-            contentStream.moveTo(40, 710);
-            contentStream.lineTo(550, 720);
-            contentStream.lineTo(550, 560);
-            contentStream.lineTo(40, 560);
-            contentStream.lineTo(40, 720);
-            contentStream.stroke();
+
 
             contentStream.close();
             document.save(outputPath);

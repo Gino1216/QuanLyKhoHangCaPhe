@@ -67,7 +67,7 @@ public class NhanVien extends JPanel {
         topPanel.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
 
         // Initialize main function toolbar
-        functionBar = new MainFunction("nhanvien", new String[]{"create", "update", "delete", "detail", "import", "export"});
+        functionBar = new MainFunction("nhanvien", new String[]{"create", "update", "delete", "detail", "export"});
         topPanel.add(functionBar, BorderLayout.WEST);
 
         // Create and add search/filter panel to the top panel
@@ -471,6 +471,7 @@ public class NhanVien extends JPanel {
                         break;
                     case "Ngày Sinh":
                         textFields[textFieldIndex].setText(ngaySinh);
+                        textFields[textFieldIndex].setEditable(false);
                         break;
                     case "Địa Chỉ":
                         textFields[textFieldIndex].setText(diaChi);

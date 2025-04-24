@@ -4,7 +4,6 @@ import DTO.NhaCungCapDTO;
 
 import Dao.DaoNCC;
 import EX.ExNhaCungCap;
-import EX.ExNhanVien;
 import Gui.MainFunction;
 import Repository.NCCRepo;
 import View.Dialog.ChiTietNhaCungCap;
@@ -45,7 +44,7 @@ public class NhaCungCap extends JPanel {
         topPanel.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
 
         // Initialize main function toolbar
-        functionBar = new MainFunction("ncc", new String[]{"create", "update", "delete", "detail", "import", "export"});
+        functionBar = new MainFunction("ncc", new String[]{"create", "update", "delete", "detail","export"});
         topPanel.add(functionBar, BorderLayout.WEST);
 
         // Create search/filter panel

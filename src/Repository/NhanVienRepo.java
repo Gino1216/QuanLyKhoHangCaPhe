@@ -13,13 +13,11 @@ public interface NhanVienRepo {
 
     boolean xoaNhanVien(String maNV);
 
-    List<NhanVienDTO> timKiemNhanVien(String keyword);
 
     List<NhanVienDTO> layDanhSachNhanVien();
 
     boolean kiemTraMaNVTonTai(String maNV);
 
-    NhanVienDTO layNhanVienTheoMaNV(String maNV);
 
     void xuatExcel(String filePath);
 

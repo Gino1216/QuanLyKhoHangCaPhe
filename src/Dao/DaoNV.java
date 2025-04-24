@@ -96,34 +96,7 @@ public class DaoNV implements NhanVienRepo {
         }
     }
 
-    @Override
-    public List<NhanVienDTO> timKiemNhanVien(String keyword) {
-        List<NhanVienDTO> ds = new ArrayList<>();
-        String sql = "SELECT * FROM nhanvien WHERE MaNV LIKE ? OR HoTen LIKE ?";
-        try (Connection conn = Mysql.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            stmt.setString(1, "%" + keyword + "%");
-            stmt.setString(2, "%" + keyword + "%");
-
-            ResultSet rs = stmt.executeQuery();
-            while (rs.next()) {
-                ds.add(new NhanVienDTO(
-                        rs.getString("MaNV"),
-                        rs.getString("HoTen"),
-                        rs.getString("GioiTinh"),
-                        rs.getString("NgaySinh"),
-                        rs.getString("SoDT"),
-                        rs.getString("Email"),
-                        rs.getString("DiaChi"),
-                        rs.getString("ChucVu")
-                ));
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return ds;
-    }
 
     @Override
     public List<NhanVienDTO> layDanhSachNhanVien() {
@@ -166,30 +139,7 @@ public class DaoNV implements NhanVienRepo {
         }
     }
 
-    @Override
-    public NhanVienDTO layNhanVienTheoMaNV(String maNV) {
-        String sql = "SELECT * FROM nhanvien WHERE MaNV = ?";
-        try (Connection conn = Mysql.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setString(1, maNV);
-            ResultSet rs = stmt.executeQuery();
-            if (rs.next()) {
-                NhanVienDTO nhanVien = new NhanVienDTO();
-                nhanVien.setMaNV(rs.getString("MaNV"));
-                nhanVien.setHoTen(rs.getString("HoTen"));
-                nhanVien.setGioiTinh(rs.getString("GioiTinh"));
-                nhanVien.setNgaySinh(rs.getString("NgaySinh"));
-                nhanVien.setSoDT(rs.getString("SoDT"));
-                nhanVien.setEmail(rs.getString("Email"));
-                nhanVien.setDiaChi(rs.getString("DiaChi"));
-                nhanVien.setChucVu(rs.getString("ChucVu"));
-                return nhanVien;
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
+
 
     @Override
     public void xuatExcel(String filePath) {

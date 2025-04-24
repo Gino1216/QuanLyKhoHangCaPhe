@@ -16,8 +16,6 @@ public interface AccountRepo {
 
     boolean xoaAccount(String username);
 
-    List<Account> timKiemAccount(String keyword);
-
     List<Account> layDanhSachAccount();
 
     void xuatExcel(String filePath);

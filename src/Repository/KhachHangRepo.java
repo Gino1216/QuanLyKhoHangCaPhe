@@ -12,7 +12,6 @@ public interface KhachHangRepo {
 
     boolean xoaKhachHang(String maKH);
 
-    List<KhachHangDTO> timKiemKhachHang(String keyword);
 
     List<KhachHangDTO> layDanhSachKhachHang();
 

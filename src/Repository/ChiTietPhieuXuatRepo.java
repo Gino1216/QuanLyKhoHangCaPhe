@@ -7,8 +7,6 @@ public interface ChiTietPhieuXuatRepo {
 
     void themChiTietPhieuXuat(ChiTietPhieuXuatDTO ct);
 
-    boolean suaChiTietPhieuXuat(ChiTietPhieuXuatDTO ct);
-
     boolean xoaChiTietPhieuXuat(String maPX, String maSP);
 
     List<ChiTietPhieuXuatDTO> layChiTietPhieuXuatTheoMaPX(String maPX);

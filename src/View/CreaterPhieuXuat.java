@@ -476,6 +476,8 @@ public class CreaterPhieuXuat extends JFrame {
 
             if (success) {
                 JOptionPane.showMessageDialog(this, "Xuất hàng thành công!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+                parent.reloadTable(); // Gọi reload bảng từ parent
+
                 dispose();
 
             } else {

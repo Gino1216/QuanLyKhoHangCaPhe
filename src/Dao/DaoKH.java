@@ -76,32 +76,7 @@ public class DaoKH implements KhachHangRepo {
         }
     }
 
-    @Override
-    public List<KhachHangDTO> timKiemKhachHang(String keyword) {
-        List<KhachHangDTO> ds = new ArrayList<>();
-        String sql = "SELECT * FROM khachhang WHERE MaKH LIKE ? OR HoTen LIKE ?";
-        try (Connection conn = Mysql.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            stmt.setString(1, "%" + keyword + "%");
-            stmt.setString(2, "%" + keyword + "%");
-
-            ResultSet rs = stmt.executeQuery();
-            while (rs.next()) {
-                ds.add(new KhachHangDTO(
-                        rs.getString("MaKH"),
-                        rs.getString("HoTen"),
-                        rs.getString("DiaChi"),
-                        rs.getString("NgayThamGia"),
-                        rs.getString("Email"),
-                        rs.getString("SoDT")
-                ));
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return ds;
-    }
 
     @Override
     public List<KhachHangDTO> layDanhSachKhachHang() {
