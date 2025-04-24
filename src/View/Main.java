@@ -11,7 +11,7 @@ import java.awt.event.*;
 public class Main extends JFrame {
 
     private JPanel contentPanel;
-    private static Account account;
+    private final Account account; // Changed to instance variable
     private JButton[] menuButtons;
 
     private final Color lightBackground = new Color(245, 245, 245);
@@ -21,8 +21,10 @@ public class Main extends JFrame {
     private final Color logoutColor = new Color(230, 60, 60);
     private final Color contentBgColor = Color.WHITE;
     private final Color separatorColor = new Color(200, 200, 200);
+    private static final String APP_ICON_PATH = "icon/coffee-icon.png";
 
     public Main(Account account) {
+        this.account = account;
         setTitle("☕ Coffee");
         setSize(1280, 640);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -31,12 +33,15 @@ public class Main extends JFrame {
 
         // Set app icon
         try {
-            setIconImage(new ImageIcon("icon/coffee-icon.png").getImage());
+            ImageIcon icon = new ImageIcon(getClass().getResource(APP_ICON_PATH));
+            if (icon.getImage() == null) {
+                throw new IllegalStateException("App icon not found: " + APP_ICON_PATH);
+            }
+            setIconImage(icon.getImage());
         } catch (Exception e) {
-            System.out.println("Icon not found");
+            System.err.println("Failed to load app icon: " + e.getMessage());
         }
 
-        Main.account = account;
         initUI();
     }
 
@@ -99,8 +104,8 @@ public class Main extends JFrame {
         separator.setForeground(separatorColor);
         sidebar.add(separator);
 
-        // Menu items with centered layout
-        String[] menuItems = MenuConfig.getMenuItems(account.getRole()); // Sử dụng mã vai trò số
+        // Menu items
+        String[] menuItems = MenuConfig.getMenuItems(account.getRole());
         String[] icons = {
                 "icon/home.svg",
                 "icon/product.svg",
@@ -111,7 +116,7 @@ public class Main extends JFrame {
                 "icon/staff.svg",
                 "icon/account.svg",
                 "icon/permission.svg",
-                "icon/statistical.svg"
+                "icon/brand.svg"
         };
 
         menuButtons = new JButton[menuItems.length];
@@ -129,7 +134,6 @@ public class Main extends JFrame {
         gbc.insets = new Insets(5, 0, 5, 0);
 
         for (int i = 0; i < menuItems.length; i++) {
-            // Tìm chỉ số của menu item trong danh sách icons để gán icon phù hợp
             int iconIndex = getIconIndex(menuItems[i]);
             String iconPath = (iconIndex >= 0 && iconIndex < icons.length) ? icons[iconIndex] : null;
 
@@ -172,7 +176,7 @@ public class Main extends JFrame {
         String[] allMenuItems = {
                 "Dashboard", "Sản phẩm", "Phiếu nhập", "Phiếu xuất",
                 "Khách hàng", "Nhà cung cấp", "Nhân viên",
-                "Tài khoản", "Phân quyền"
+                "Tài khoản", "Phân quyền", "Trả hàng"
         };
         for (int i = 0; i < allMenuItems.length; i++) {
             if (allMenuItems[i].equals(menuItem)) {
@@ -204,10 +208,13 @@ public class Main extends JFrame {
             }
         };
 
-        // Load SVG icon for the button
         if (svgIconPath != null) {
-            ImageIcon icon = IconUtils.loadSVGIcon(svgIconPath, 24, 24);
-            button.setIcon(icon);
+            try {
+                ImageIcon icon = IconUtils.loadSVGIcon(svgIconPath, 24, 24);
+                button.setIcon(icon);
+            } catch (Exception e) {
+                System.err.println("Failed to load SVG icon: " + svgIconPath);
+            }
         }
 
         button.setFont(new Font("Segoe UI", Font.PLAIN, 16));
@@ -292,7 +299,8 @@ public class Main extends JFrame {
     private void showLogoutConfirmation() {
         int choice = JOptionPane.showConfirmDialog(this, "Bạn có chắc chắn muốn đăng xuất?", "Đăng Xuất", JOptionPane.YES_NO_OPTION);
         if (choice == JOptionPane.YES_OPTION) {
-            System.exit(0);
+            dispose(); // Close the Main frame
+            SwingUtilities.invokeLater(() -> new LoginMain()); // Open LoginMain frame
         }
     }
 
@@ -302,7 +310,7 @@ public class Main extends JFrame {
         statusBar.setLayout(new FlowLayout(FlowLayout.LEFT));
         statusBar.setPreferredSize(new Dimension(getWidth(), 30));
 
-        JLabel statusLabel = new JLabel("Chào mừng bạn đến với hệ thống quản lý cà phê!");
+        JLabel statusLabel = new JLabel("Welcome to the Coffee Management System!");
         statusLabel.setForeground(Color.WHITE);
         statusBar.add(statusLabel);
 
@@ -313,7 +321,7 @@ public class Main extends JFrame {
         try {
             UIManager.setLookAndFeel(new FlatLightLaf());
         } catch (UnsupportedLookAndFeelException e) {
-            e.printStackTrace();
+            System.err.println("Failed to apply FlatLightLaf: " + e.getMessage());
         }
     }
 }
