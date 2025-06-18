@@ -1,0 +1,166 @@
+package Dao;
+
+import Config.Mysql;
+import DTO.KhachHangDTO;
+import Repository.KhachHangRepo;
+
+import javax.swing.*;
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
+
+
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+
+import java.io.FileOutputStream;
+
+
+public class DaoKH implements KhachHangRepo {
+
+    @Override
+    public void themKhachHang(KhachHangDTO kh) {
+        String sql = "INSERT INTO khachhang (MaKH, HoTen, DiaChi, NgayThamGia, Email, SoDT) VALUES (?, ?, ?, ?, ?, ?)";
+        try (Connection conn = Mysql.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, kh.getMaKH());
+            stmt.setString(2, kh.getHoTen());
+            stmt.setString(3, kh.getDiaChi());
+            stmt.setString(4, kh.getNgayThamGia());
+            stmt.setString(5, kh.getEmail());
+            stmt.setString(6, kh.getSoDT());
+
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public boolean suaKhachHang(KhachHangDTO kh) {
+        String sql = "UPDATE khachhang SET HoTen=?, DiaChi=?, NgayThamGia=?, Email=?, SoDT=? WHERE MaKH=?";
+        try (Connection conn = Mysql.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, kh.getHoTen());
+            stmt.setString(2, kh.getDiaChi());
+            stmt.setString(3, kh.getNgayThamGia());
+            stmt.setString(4, kh.getEmail());
+            stmt.setString(5, kh.getSoDT());
+            stmt.setString(6, kh.getMaKH());
+
+            int rows = stmt.executeUpdate();
+            return rows > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    @Override
+    public boolean xoaKhachHang(String maKH) {
+        String sql = "DELETE FROM khachhang WHERE MaKH=?";
+        try (Connection conn = Mysql.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, maKH);
+            int rows = stmt.executeUpdate();
+            return rows > 0;
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(null, "Không thể xóa khách hàng. Có thể đang được liên kết với hóa đơn hoặc thông tin khác.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+    }
+
+
+
+    @Override
+    public List<KhachHangDTO> layDanhSachKhachHang() {
+        List<KhachHangDTO> ds = new ArrayList<>();
+        String sql = "SELECT * FROM khachhang";
+        try (Connection conn = Mysql.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+
+            while (rs.next()) {
+                ds.add(new KhachHangDTO(
+                        rs.getString("MaKH"),
+                        rs.getString("HoTen"),
+                        rs.getString("DiaChi"),
+                        rs.getString("NgayThamGia"),
+                        rs.getString("Email"),
+                        rs.getString("SoDT")
+                ));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return ds;
+    }
+
+    @Override
+    public boolean kiemTraMaKHTonTai(String maKH) {
+        String sql = "SELECT MaKH FROM khachhang WHERE MaKH=?";
+        try (Connection conn = Mysql.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, maKH);
+            ResultSet rs = stmt.executeQuery();
+            return rs.next();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    @Override
+    public void xuatExcel(String filePath) {
+        List<KhachHangDTO> khachHangList = layDanhSachKhachHang();
+
+        Workbook workbook = new XSSFWorkbook();
+        Sheet sheet = workbook.createSheet("DanhSachKhachHang");
+
+        // Tạo dòng tiêu đề
+        Row headerRow = sheet.createRow(0);
+        String[] columns = {"Mã KH", "Họ Tên", "Địa Chỉ", "Ngày Tham Gia", "Email", "Số ĐT"};
+        for (int i = 0; i < columns.length; i++) {
+            Cell cell = headerRow.createCell(i);
+            cell.setCellValue(columns[i]);
+        }
+
+        // Ghi dữ liệu
+        int rowNum = 1;
+        for (KhachHangDTO kh : khachHangList) {
+            Row row = sheet.createRow(rowNum++);
+            row.createCell(0).setCellValue(kh.getMaKH());
+            row.createCell(1).setCellValue(kh.getHoTen());
+            row.createCell(2).setCellValue(kh.getDiaChi());
+            row.createCell(3).setCellValue(kh.getNgayThamGia());
+            row.createCell(4).setCellValue(kh.getEmail());
+            row.createCell(5).setCellValue(kh.getSoDT());
+        }
+
+        // Tự động chỉnh cột
+        for (int i = 0; i < columns.length; i++) {
+            sheet.autoSizeColumn(i);
+        }
+
+        try (FileOutputStream fileOut = new FileOutputStream(filePath)) {
+            workbook.write(fileOut);
+            JOptionPane.showMessageDialog(null, "Xuất file Excel thành công tại: " + filePath, "Thành công", JOptionPane.INFORMATION_MESSAGE);
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, "Lỗi khi xuất file Excel: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        } finally {
+            try {
+                workbook.close();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+}
