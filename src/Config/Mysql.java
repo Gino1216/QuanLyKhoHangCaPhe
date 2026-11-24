@@ -14,21 +14,28 @@ import java.sql.DriverManager;
  */
 public class Mysql {
 
+    private static final String DEFAULT_URL
+            = "jdbc:mysql://localhost:3306/quanlycuahang2?useUnicode=true&characterEncoding=UTF-8";
+    private static final String DEFAULT_USER = "root";
+    private static final String DEFAULT_PASSWORD = "";
+
     public static Connection getConnection() {
-        Connection c = null;
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
-            String url = "jdbc:mysql://localhost:3306/quanlycuahang2?useUnicode=true&characterEncoding=UTF-8";
-            String userName = "root";
-            String password = "123456";
+            String url = getEnvironmentValue("DB_URL", DEFAULT_URL);
+            String userName = getEnvironmentValue("DB_USER", DEFAULT_USER);
+            String password = getEnvironmentValue("DB_PASSWORD", DEFAULT_PASSWORD);
 
-            //Tao ket noi 
-            c = DriverManager.getConnection(url, userName, password);
+            return DriverManager.getConnection(url, userName, password);
         } catch (Exception e) {
-            // TODO: handle exception
-//			JOptionPane.showMessageDialog(null, "Không thể kết nối đến cơ sở dữ liệu !","Lỗi", JOptionPane.ERROR_MESSAGE);
+            System.err.println("Không thể kết nối đến cơ sở dữ liệu: " + e.getMessage());
+            return null;
         }
-        return c;
+    }
+
+    private static String getEnvironmentValue(String name, String defaultValue) {
+        String value = System.getenv(name);
+        return value == null || value.isBlank() ? defaultValue : value;
     }
 
     public static void closeConnection(Connection c) {
