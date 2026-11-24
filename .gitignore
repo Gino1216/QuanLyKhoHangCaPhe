@@ -1,0 +1,19 @@
+# IDE settings
+.idea/
+*.iml
+nbproject/private/
+
+# Build output
+build/
+out/
+dist/
+target/
+*.class
+
+# Local configuration and logs
+.env
+*.log
+
+# Generated exports
+*.xlsx
+*.pdf
